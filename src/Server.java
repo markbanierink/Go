@@ -53,15 +53,15 @@ public class Server {
 
     private ClientHandler getClientHandler(Player player) {
         ClientHandler clientHandler = null;
-        for (Map.Entry<Player, ClientHandler> listedPlayer : players.entrySet()) {
-            if (player.equals(listedPlayer)) {
-                clientHandler = listedPlayer.getValue();
+        for (Player listedPlayer : players.keySet()) {
+            if (listedPlayer.equals(player)) {
+                clientHandler = players.get(listedPlayer);
             }
         }
         return clientHandler;
     }
 
-    private Player getPlayer(ClientHandler clientHandler) {
+    private Player getPlayer(ClientHandler clientHandler) {                                 // Deze nakijken, loop door HashMap goed?
         Player player = null;
         for (Map.Entry<Player, ClientHandler> listedClientHandler : players.entrySet()) {
             if (clientHandler.equals(listedClientHandler)) {
@@ -69,6 +69,10 @@ public class Server {
             }
         }
         return player;
+    }
+
+    private boolean isPlayer(ClientHandler clientHandler) {
+        return getPlayer(clientHandler) != null;
     }
 
     private ServerSocket createServerSocket(int port)  {
@@ -112,29 +116,37 @@ public class Server {
         System.out.println(player.getName() + " removed");
     }
 
-    private synchronized void listGame(Game game) {
-        games.add(game);
-        System.out.println("Game " + game.getGameNumber() + " listed");
-    }
-
     private synchronized void removeGame(Game game) {
         games.remove(game);
         System.out.println("Game " + game.getGameNumber() + " removed");
     }
 
-    private synchronized void matchWithListedPlayer(Player player) {
-        for (Player listedPlayer : players.keySet()) {
-            if (listedPlayer.getGame() == null && !listedPlayer.equals(player)) {
-                if (!MATCH_BOARDSIZE) {
-                    player.setBoardsize(listedPlayer.getBoardsize());   // set boardsize of second player to match the first
+    private synchronized void matchWithListedPlayer(Player player, int boardsize) {
+        for (Game game : games) {
+            if (game.getPlayers().size() == 1) {
+                if (MATCH_BOARDSIZE) {
+                    if (game.getBoard().getSize() == boardsize) {
+                        game.addPlayer(player);
+                    }
+                } else {
+                    game.addPlayer(player);
+                    System.out.println("Player added to existing game");
                 }
-                if (player.getBoardsize() == listedPlayer.getBoardsize()) {
-                    createGame(listedPlayer, player, listedPlayer.getBoardsize());
-                    return;
-                }
-            } else {
-                System.out.println("No match found");
+                game.startGame();
+                broadcastReadyCommand(game);
+                System.out.println("Game started");
+                return;
             }
+        }
+        Game newGame = createGame(boardsize);
+        newGame.addPlayer(player);
+        System.out.println("New game added to list");
+    }
+
+    public void broadcastReadyCommand(Game game) {
+        for (Player player : game.getPlayers()) {
+            String string = READY + " " + player.getStone().toString() + " " + player.getOpponent().getName() + " " + game.getBoard().getSize();
+            handleClientOutput(getClientHandler(player), string);
         }
     }
 
@@ -146,17 +158,20 @@ public class Server {
         return games.size() + 1;
     }
 
-    private void createGame(Player player1, Player player2, int boardsize) {
-        Game game = new Game(player1, player2, boardsize, createGameNumber());
-        listGame(game);
-        player1.setGame(game);
-        player2.setGame(game);
-        System.out.println("Created game on board(" + player1.getBoardsize() + ") with " + player1.getName() + " vs " + player2.getName());
+    private synchronized void listGame(Game game) {
+        games.add(game);
+        System.out.println("Game " + game.getGameNumber() + " listed");
     }
 
-    private void broadcastClients(String string) {
-        for (ClientHandler clientHandler : clientHandlers.keySet()) {
-            handleClientOutput(clientHandler, string);
+    private Game createGame(int boardsize) {
+        Game game = new Game(boardsize, createGameNumber());
+        listGame(game);
+        return game;
+    }
+
+    public void broadcastGame(Game game, String message) {
+        for (Player player : game.getPlayers()) {
+            handleClientOutput(getClientHandler(player), message);
         }
     }
 
@@ -166,37 +181,62 @@ public class Server {
         }
     }
 
+    private void broadcastClients(String string) {
+        for (ClientHandler clientHandler : clientHandlers.keySet()) {
+            handleClientOutput(clientHandler, string);
+        }
+    }
+
     public void createPlayer(ClientHandler clientHandler, String string) {
         String[] split = splitString(string);
-        Player player = new Player(split[1], Integer.parseInt(split[2]));
+        Player player = new Player(split[1]);
         listPlayer(player, clientHandler);
         handleClientOutput(clientHandler, WAITING.toString());
-        matchWithListedPlayer(player);
         System.out.println("New player: " + split[1] + " on board(" + split[2] +")");
+        matchWithListedPlayer(player, Integer.parseInt(split[2]));
     }
 
     public void handleClientInput(ClientHandler clientHandler, String string) {
         if (isServerCommand(string)) {
             if (isGo(string)) {
-                createPlayer(clientHandler, string);
+                if (isPlayer(clientHandler)) {
+                    handleClientOutput(clientHandler, WARNING + ": You already started a game..");
+                } else {
+                    createPlayer(clientHandler, string);
+                }
+            } else if (isCancel(string)) {
+                deletePlayer(getPlayer(clientHandler));
+
             } else {
                 getPlayer(clientHandler).getGame().handlePlayerInput(getPlayer(clientHandler), string);
             }
         } else {
-            handleClientOutput(clientHandler, WARNING + " unknown keyword");
+            handleClientOutput(clientHandler, WARNING + ": Unknown keyword");
         }
     }
 
+    private void deletePlayer(Player player) {
+        removePlayer(player);
+        player.getGame().removePlayer(player);
+    }
+
+    private void deleteGame(Game game) {
+
+    }
+
     public void kickClient(ClientHandler clientHandler) {
-        removeClientHandler(clientHandler);
         handleClientOutput(clientHandler, "You are being kicked");
-        if (clientHandler.hasGame()) {
-            removeGame(clientHandler.getPlayer().getGame());
-            removePlayer(clientHandler.getPlayer());
-            if (clientHandler.getGame().getPlayers().size() > 1) {
-                handleClientOutput(getClientHandler(clientHandler.getPlayer().getOpponent()), clientHandler.getPlayer().getName() + " is being kicked");
+        if (isPlayer(clientHandler)) {
+            if (getPlayer(clientHandler).getGame().getPlayers().size() == 0) {
+                // keep game if another player is still in it?
+                deleteGame(getPlayer(clientHandler).getGame());
+                // delete instance of game?
+            } else {
+                handleClientOutput(getClientHandler(getPlayer(clientHandler).getOpponent()), getPlayer(clientHandler).getName() + " is being kicked");
             }
+            deletePlayer(getPlayer(clientHandler));
         }
+        removeClientHandler(clientHandler);
         clientHandler.shutDown();
     }
 

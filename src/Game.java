@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static helper.ComToolbox.*;
+import static helper.Keyword.*;
 import static helper.Stone.*;
 
 /**
@@ -21,22 +22,22 @@ public class Game {
     private HashMap<Integer, String> boardHistory = new HashMap<>();
     private GoGUIIntegrator goGui;
 
-
-    Game(Player player1, Player player2, int boardsize, int gameNumber) {
-        assignStone(player1, player2);
-        addPlayer(player1);
-        addPlayer(player2);
+    Game(int boardsize, int gameNumber) {
         this.board = new Board(boardsize);
         this.gameNumber = gameNumber;
-        goGui = new GoGUIIntegrator(true, true, getBoard().getSize());
-        getGui().startGUI();
     }
 
     public int getGameNumber() {
         return this.gameNumber;
     }
 
-    private Board getBoard() {
+    public void startGame() {
+        assignStone();
+        goGui = new GoGUIIntegrator(true, true, getBoard().getSize());
+        getGui().startGUI();
+    }
+
+    public Board getBoard() {
         return this.board;
     }
 
@@ -76,8 +77,14 @@ public class Game {
         return stone.equals(WHITE);
     }
 
-    private void addPlayer(Player player) {
+    public void addPlayer(Player player) {
         this.players.add(player);
+        player.setGame(this);
+    }
+
+    public void removePlayer(Player player) {
+        player.setGame(null);
+        this.players.remove(player);
     }
 
     private void nextTurn() {
@@ -85,10 +92,10 @@ public class Game {
         turnCounter++;
     }
 
-    private void assignStone(Player player1, Player player2) {
+    private void assignStone() {
         Stone stone = randomStone();
-        player1.setStone(stone);
-        player2.setStone(stone.other());
+        players.get(0).setStone(stone);
+        players.get(1).setStone(stone.other());
     }
 
     private void placeStone(int x, int y, Stone stone) {
@@ -102,7 +109,11 @@ public class Game {
     }
 
     public void handlePlayerInput(Player player, String string) {
+        // bring player input to server?
+    }
 
+    public void handlePlayerOutput(Player player, String string) {
+        // bring server output to player?
     }
 
     public static void handleClientCommand(String string) {

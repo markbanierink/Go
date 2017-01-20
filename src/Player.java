@@ -7,20 +7,14 @@ public class Player {
 
     private Stone stone;
     private String name;
-    private int boardsize;
     private Game game;
 
-    Player(String name, int boardsize) {
+    Player(String name) {
         this.name = name;
-        this.boardsize = boardsize;
     }
 
     public String getName() {
         return this.name;
-    }
-
-    public int getBoardsize() {
-        return this.boardsize;
     }
 
     public Stone getStone() {
@@ -43,10 +37,6 @@ public class Player {
 
     public boolean hasGame() {
         return (this.getGame() != null);
-    }
-
-    public void setBoardsize(int boardsize) {
-        this.boardsize = boardsize;
     }
 
     public void setGame(Game game) {

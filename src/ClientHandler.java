@@ -26,32 +26,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public boolean hasGame() {
-        return getGame() != null;
-    }
-
     public Server getServer() {
         return this.server;
-    }
-
-    public Player getPlayer() {
-        return this.player;
-    }
-
-    public Game getGame() {
-        return this.game;
-    }
-
-    public Stone getStone() {
-        return getPlayer().getStone();
-    }
-
-    public String getName() {
-        return getPlayer().getName();
-    }
-
-    private boolean isPlayer() {
-        return (getPlayer() != null);
     }
 
     public void handleClientInput(String string) {
@@ -106,12 +82,5 @@ public class ClientHandler implements Runnable {
             System.out.println(e.getMessage());
         }
     }
-
-    public void setPlayer(String name, int boardsize) {
-        this.player = new Player(name, boardsize);
-    }
-
-
-
 
 }
