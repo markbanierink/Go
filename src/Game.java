@@ -1,5 +1,4 @@
 import com.nedap.go.gui.GoGUIIntegrator;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,31 +10,77 @@ public class Game {
 
     private List<Player> players = new ArrayList<>();
     private Board board;
-    private int boardsize;
-    private Stone turn;
-    private int turnCounter;
-    private HashMap<Integer, Board> boardHistory;
+    private Stone turn = Stone.BLACK;;
+    private int turnCounter = 1;
+    private HashMap<Integer, Board> boardHistory = new HashMap<>();;
     private GoGUIIntegrator goGui;
 
 
     Game(Player player1, Player player2, int boardsize) {
-        this.boardsize = boardsize;
-        this.players.add(player1);
-        this.players.add(player2);
+        addPlayer(player1);
+        addPlayer(player2);
         this.board = new Board(boardsize);
-        boardHistory = new HashMap<>();
-        turn = Stone.BLACK;
-        turnCounter = 1;
-        goGui = new GoGUIIntegrator(true, true, board.getBoardsize());
-        goGui.startGUI();
+        goGui = new GoGUIIntegrator(true, true, getBoard().getSize());
+        getGui().startGUI();
+    }
+
+    private Board getBoard() {
+        return this.board;
+    }
+
+    private HashMap<Integer, Board> getBoardHistory() {
+        return this.boardHistory;
+    }
+
+    private int getTurnNumber() {
+        return this.turnCounter;
+    }
+
+    private Stone getTurn() {
+        return this.turn;
+    }
+
+    public List<Player> getPlayers() {
+        return this.players;
+    }
+
+    private GoGUIIntegrator getGui() {
+        return this.goGui;
+    }
+
+    private boolean isSuicide() {
+        return false;
+    }
+
+    private boolean isTurn(Player player) {
+        return player.getStone().equals(this.getTurn());
+    }
+
+    private static boolean stone2bool(Stone stone) {
+        return stone.equals(Stone.WHITE);
+    }
+
+    private void addPlayer(Player player) {
+        this.players.add(player);
+    }
+
+    private void nextTurn() {
+        this.turn = this.turn.other();
+        turnCounter++;
     }
 
     private Stone randomStone() {
         return Stone.BLACK;                                         // LEKKER HIGH-TECH, AANPASSEN..
     }
 
-    public int getBoardsize() {
-        return this.boardsize;
+    private void placeStone(int x, int y, Stone stone) {
+        getBoard().setField(x, y, stone);
+        getGui().addStone(x, y, stone2bool(stone));
+    }
+
+    private void removeStone(int x, int y) {
+        getBoard().emptyField(x, y);
+        getGui().removeStone(x, y);
     }
 
     public void handleClientInput(String string) {
@@ -52,73 +97,49 @@ public class Game {
 
     private void move(Player player, int x, int y) {
         if (isValidMove(player, x, y)) {
-            this.board.setField(x, y, player.getStone());
+            getBoard().setField(x, y, player.getStone());
             copyBoard();
             nextTurn();
-            goGui.addStone(x, y, stone2bool(player.getStone()));
-            //player1.confirmMove(x, y);
-            //player2.confirmMove(x, y);
+            getGui().addStone(x, y, stone2bool(player.getStone()));
         }
     }
 
     private boolean isValidMove(Player player, int x, int y) {
         boolean result = true;
-        // Check if it is this player's turn
-        if (!isTurn(player)) {
+        if (!isTurn(player)) {              // Check if it is this player's turn
             result = false;
         }
-        // Check if the desired position is free
-        if (!board.isEmpty(x, y)) {
+        if (!getBoard().isEmpty(x, y)) {    // Check if the desired position is free
             result = false;
         }
-        // Check if it doesn't match a previous situation
-        if (boardExists()){
+        if (boardExists()){                 // Check if it doesn't match a previous situation
             result = false;
         }
-        // Check if it isn't a suicide move
+        if (isSuicide()) {                  // Check if it isn't a suicide move
+            result = false;
+        }
         // Etc.
         return result;
     }
 
     private void copyBoard() {
-        Board boardCopy = new Board(this.board.getBoardsize());
-        for (int i = 0; i < this.board.getBoardsize(); i++) {
-            for (int j = 0; j < this.board.getBoardsize(); j++) {
-                boardCopy.setField(i, j, this.board.getField(i, j));
+        Board boardCopy = new Board(getBoard().getSize());
+        for (int i = 0; i < getBoard().getSize(); i++) {
+            for (int j = 0; j < getBoard().getSize(); j++) {
+                boardCopy.setField(i, j, getBoard().getField(i, j));
             }
         }
-        boardHistory.put(getTurnNumber(), boardCopy);
+        getBoardHistory().put(getTurnNumber(), boardCopy);
     }
 
     private boolean boardExists() {
         boolean result = false;
-        for (HashMap.Entry<Integer, Board> historicBoard : boardHistory.entrySet()) {
-            if (this.board.equals(historicBoard.getValue())) {                                    // NAKIJKEN OF EQUALS GOED IS!!!
+        for (HashMap.Entry<Integer, Board> historicBoard : getBoardHistory().entrySet()) {
+            if (getBoard().equals(historicBoard.getValue())) {                                    // NAKIJKEN OF EQUALS GOED IS!!!
                 result = true;
             }
         }
         return result;
-    }
-
-    private boolean isTurn(Player player) {
-        return player.getStone().equals(this.getTurn());
-    }
-
-    private int getTurnNumber() {
-        return this.turnCounter;
-    }
-
-    private Stone getTurn() {
-        return this.turn;
-    }
-
-    private void nextTurn() {
-        this.turn = this.turn.other();
-        turnCounter++;
-    }
-
-    private static boolean stone2bool(Stone stone) {
-        return stone.equals(Stone.WHITE);
     }
 
 }

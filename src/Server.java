@@ -12,105 +12,131 @@ public class Server {
     private static final int PORT = 2727;               // Port for communication
     private static final int MAX_CLIENTS = 10;          // Maximum number of clients that can connect to the server
 
-    private ServerSocket serverSocket = null;
-    private Socket socket = null;
-    private List<Player> players = null;
-    private List<Game> games = null;
+    private List<ClientHandler> clientHandlers = new ArrayList<>();;
+    private List<Player> players = new ArrayList<>();
+    private List<Game> games = new ArrayList<>();
     private boolean serverOpen = true;
+    private static final boolean MATCH_BOARDSIZE = false;
 
     public static void main(String[] args) {
         new Server(PORT);
     }
 
     public Server(int port) {
-        players = new ArrayList<>();
-        games = new ArrayList<>();
+        ServerSocket serverSocket = createServerSocket(port);
+        Socket socket = null;
+        while (numberOfPlayers() < MAX_CLIENTS && serverOpen) {
+            System.out.println("Socket available");
+            socket = createSocket(serverSocket);
+            ClientHandler clientHandler = new ClientHandler(this, socket);
+            (new Thread(clientHandler, "ClientHandler")).start();
+            listClientHandler(clientHandler);
+        }
+        shutDown(socket, "Server shuts down");
+    }
+
+    private ServerSocket createServerSocket(int port)  {
+        ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            e.getStackTrace();
+            System.out.println(e.getMessage());
         }
+        return serverSocket;
+    }
+
+    private Socket createSocket(ServerSocket serverSocket) {
+        Socket socket = null;
         try {
-            while (numberOfPlayers() < MAX_CLIENTS && serverOpen) {
-                System.out.println("Socket available");
-                socket = serverSocket.accept();
-                System.out.println("Socket accepted");
-                ClientHandler clientHandler = new ClientHandler(this, socket);
-                Thread clientThread = new Thread(clientHandler, "Client");
-                clientThread.start();
-                //listPlayer(clientHandler);
-            }
-            System.out.println("No sockets available");
-            //socket.close();
+            socket = serverSocket.accept();
         } catch (IOException e) {
-            e.getStackTrace();
+            System.out.println(e.getMessage());
         }
+        return socket;
     }
 
     private void stopServerOpen() {
         this.serverOpen = false;
     }
 
-    private void listPlayer(Player player) {
+    private synchronized void listClientHandler(ClientHandler clientHandler) {
+        clientHandlers.add(clientHandler);
+        System.out.println("ClientHandler listed");
+    }
+
+    private synchronized void listPlayer(Player player) {
         players.add(player);
-        System.out.println("Client listed");
+        System.out.println("Player listed");
+    }
+
+    private synchronized void listGame(Game game) {
+        games.add(game);
+        System.out.println("Game listed");
     }
 
     private int numberOfPlayers() {
         return players.size();
     }
 
-    private void matchWithListedPlayer(Player player) {
+    private synchronized void matchWithListedPlayer(Player player) {
         for (Player listedPlayer : players) {
-            if (listedPlayer.getGame() == null) {
-                createGame(listedPlayer, player, listedPlayer.getBoardsize());
-                player.setBoardsize(listedPlayer.getBoardsize());
-                return;
+            if (listedPlayer.getGame() == null && !listedPlayer.equals(player)) {
+                if (!MATCH_BOARDSIZE) {
+                    player.setBoardsize(listedPlayer.getBoardsize());   // set boardsize of second player to match the first
+                }
+                if (player.getBoardsize() == listedPlayer.getBoardsize()) {
+                    createGame(listedPlayer, player, listedPlayer.getBoardsize());
+                    return;
+                }
+            } else {
+                System.out.println("No match found");
             }
         }
     }
 
     private void createGame(Player player1, Player player2, int boardsize) {
         Game game = new Game(player1, player2, boardsize);
-        games.add(game);
+        listGame(game);
         player1.setGame(game);
         player2.setGame(game);
-        System.out.println("Created board(" + player1.getBoardsize() + ") with " + player1.getName() + " vs " + player2.getName());
+        System.out.println("Created game on board(" + player1.getBoardsize() + ") with " + player1.getName() + " vs " + player2.getName());
     }
 
-    public void broadcast(String string) {
+    private void broadcastClients(String string) {
+        for (ClientHandler clientHandler : clientHandlers) {
+            handleClientOutput(clientHandler, string);
+        }
+    }
+
+    public void broadcastPlayers(String string) {
         for (Player player : players) {
-            handlePlayerOutput(player, string);
+            handleClientOutput(player.getClientHandler(), string);
         }
     }
 
     public void handleClientInput(ClientHandler clientHandler, String string) {
-        System.out.println(string);
         String[] command = CommunicationToolbox.string2Command(string);
-        if (command[0] != null && command[0].equals(Keyword.GO.toString())) {
-            Player newPlayer = new Player(command[1], Integer.parseInt(command[2]), clientHandler);
-            matchWithListedPlayer(newPlayer);
+        if (CommunicationToolbox.commandGoIsValid(string)) {
+            Player player = new Player(command[1], Integer.parseInt(command[2]), clientHandler);
+            System.out.println("New player: " + command[1] + " on board(" + command[2] +")");
+            listPlayer(player);
+            handleClientOutput(player.getClientHandler(), Keyword.WAITING.toString());
+            matchWithListedPlayer(player);
         }
     }
 
-    public void handleClientInput(Player player, String string) {
-        System.out.println(string);
-        String[] command = CommunicationToolbox.string2Command(string);
-        if (player.hasGame()) {
-            player.getGame().handleClientInput(string);
+    public void handleClientOutput(ClientHandler clientHandler, String string) {
+        clientHandler.handleClientOutput(string);
+    }
+
+    private void shutDown(Socket socket, String broadcastMessage) {
+        broadcastClients(broadcastMessage);
+        try {
+            socket.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
     }
-
-    public void handlePlayerOutput(Player player, String string) {
-        player.handleClientOutput(string);
-    }
-
-//    private void handleClientInput(String string) {
-//        Keyword keyword = CommunicationToolbox.getKeyword(string);
-//        if (keyword == Keyword.GO) {
-//            // int numArguments = CommunicationToolbox.numArguments(string);
-//        }
-//    }
 
 }
 

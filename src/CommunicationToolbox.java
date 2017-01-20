@@ -39,69 +39,123 @@ public class CommunicationToolbox {
         }
     }
 
-    private static boolean commandGoIsValid(String[] split) {
-        return ((numArguments(split) == 3) && (split[1] != null) && (stringIsInteger(split[2])));
+    public static boolean commandGoIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) == 3) && (split[1] != null) && (stringIsInteger(split[2])));
+        }
+        return valid;
     }
 
-    private static boolean commandCancelIsValid(String[] split) {
-        return ((numArguments(split) == 1));
+    public static boolean commandCancelIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) == 1));
+        }
+        return valid;
     }
 
-    private static boolean commandMoveIsValid(String[] split) {
-        return ((numArguments(split) == 3) && (stringIsInteger(split[1])) && (stringIsInteger(split[2])));
+    public static boolean commandMoveIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) == 3) && (stringIsInteger(split[1])) && (stringIsInteger(split[2])));
+        }
+        return valid;
     }
 
-    private static boolean commandPassIsValid(String[] split) {
-        return ((numArguments(split) == 1));
+    public static boolean commandPassIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) == 1));
+        }
+        return valid;
     }
 
-    private static boolean commandTableflipIsValid(String[] split) {
-        return ((numArguments(split) == 1));
+    public static boolean commandTableflipIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) == 1));
+        }
+        return valid;
     }
 
-    private static boolean commandChatIsValid(String[] split) {
-        return ((numArguments(split) > 1));
+    public static boolean commandChatIsValid(String string) {
+        boolean valid = false;
+        String[] split = splitString(string);
+        if (getKeyword(split)!= null) {
+            valid = ((numArguments(split) > 1));
+        }
+        return valid;
     }
 
+//    private static boolean commandGoIsValid(String[] split) {
+//        return ((numArguments(split) == 3) && (split[1] != null) && (stringIsInteger(split[2])));
+//    }
+//
+//    private static boolean commandCancelIsValid(String[] split) {
+//        return ((numArguments(split) == 1));
+//    }
+//
+//    private static boolean commandMoveIsValid(String[] split) {
+//        return ((numArguments(split) == 3) && (stringIsInteger(split[1])) && (stringIsInteger(split[2])));
+//    }
+//
+//    private static boolean commandPassIsValid(String[] split) {
+//        return ((numArguments(split) == 1));
+//    }
+//
+//    private static boolean commandTableflipIsValid(String[] split) {
+//        return ((numArguments(split) == 1));
+//    }
+//
+//    private static boolean commandChatIsValid(String[] split) {
+//        return ((numArguments(split) > 1));
+//    }
+//
     public static String[] string2Command(String string) {
         String[] split = splitString(string);
         Keyword keyword = getKeyword(split);
-        String[] result = null;
+        String[] command = null;
         if (keyword != null) {
             switch (keyword) {
                 case GO:
-                    if (commandGoIsValid(split)) {
-                        result = split;
+                    if (commandGoIsValid(string)) {
+                        command = split;
                     }
                     break;
                 case CANCEL:
-                    if (commandCancelIsValid(split)) {
-                        result = split;
+                    if (commandCancelIsValid(string)) {
+                        command = split;
                     }
                     break;
                 case MOVE:
-                    if (commandMoveIsValid(split)) {
-                        result = split;
+                    if (commandMoveIsValid(string)) {
+                        command = split;
                     }
                     break;
                 case PASS:
-                    if (commandPassIsValid(split)) {
-                        result = split;
+                    if (commandPassIsValid(string)) {
+                        command = split;
                     }
                     break;
                 case TABLEFLIP:
-                    if (commandTableflipIsValid(split)) {
-                        result = split;
+                    if (commandTableflipIsValid(string)) {
+                        command = split;
                     }
                     break;
                 case CHAT:
-                    if (commandChatIsValid(split)) {
-                        result = split;
+                    if (commandChatIsValid(string)) {
+                        command = split;
                     }
                     break;
             }
         }
-        return result;
+        return command;
     }
 
 

@@ -6,19 +6,19 @@ import java.net.Socket;
  */
 public class ClientWriter implements Runnable {
 
-    private ClientHandler clientHandler;
-    private Socket socket = null;
-    protected BufferedWriter out;
-
-    public ClientWriter(ClientHandler clientHandler, Socket socket) {
-        this.clientHandler = clientHandler;
-        this.socket = socket;
-        try {
-            this.out = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
-        } catch (IOException e) {
-            e.getStackTrace();
-        }
-    }
+//    private ClientHandler clientHandler;
+//    private Socket socket = null;
+//    protected BufferedWriter out;
+//
+//    public ClientWriter(ClientHandler clientHandler, Socket socket) {
+//        this.clientHandler = clientHandler;
+//        this.socket = socket;
+//        try {
+//            this.out = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
+//        } catch (IOException e) {
+//            e.getStackTrace();
+//        }
+//    }
 
     public void run() {
 //        String line;

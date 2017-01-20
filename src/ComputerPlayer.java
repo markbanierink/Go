@@ -3,8 +3,8 @@
  */
 public class ComputerPlayer extends Player {
 
-    ComputerPlayer(String name, int boardsize) {
-        super(name, boardsize);
+    ComputerPlayer(String name, int boardsize, ClientHandler clientHandler) {
+        super(name, boardsize, clientHandler);
     }
 
 }

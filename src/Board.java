@@ -3,19 +3,19 @@
  */
 public class Board {
 
-    private int boardsize;
+    private int size;
     private Stone[][] fields;
 
     public Board(int boardsize) {
-        this.boardsize = boardsize;
+        this.size = boardsize;
         this.fields = new Stone[boardsize][boardsize];
         clearBoard();
     }
 
     private void clearBoard() {
-        for (int i = 0; i < getBoardsize(); i++) {
-            for (int j = 0; j < getBoardsize(); j++) {
-                setField(i, j, Stone.EMPTY);
+        for (int i = 0; i < getSize(); i++) {
+            for (int j = 0; j < getSize(); j++) {
+                emptyField(i, j);
             }
         }
     }
@@ -33,16 +33,22 @@ public class Board {
     }
 
     private boolean isField(int x, int y) {
-        return ( (x >= 0 && x < getBoardsize()) && (y >= 0 && y < getBoardsize()) );
+        return ( (x >= 0 && x < getSize()) && (y >= 0 && y < getSize()) );
     }
 
-    public int getBoardsize() {
-        return this.boardsize;
+    public int getSize() {
+        return this.size;
     }
 
     public void setField(int x, int y, Stone stone) {
-        if (isEmpty(x, y)) {
+        if (isField(x, y)) {
             this.fields[x][y] = stone;
+        }
+    }
+
+    public void emptyField(int x, int y) {
+        if (!isEmpty(x, y)) {
+            setField(x, y, Stone.EMPTY);
         }
     }
 

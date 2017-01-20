@@ -16,7 +16,7 @@ public class Writer implements Runnable {
             //this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             this.out = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
         } catch (IOException e) {
-            e.getStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -30,7 +30,7 @@ public class Writer implements Runnable {
             }
             //shutDown();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -41,7 +41,7 @@ public class Writer implements Runnable {
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             line = in.readLine();
         } catch (IOException e) {
-            e.getStackTrace();
+            System.out.println(e.getMessage());
         }
         return (line == null) ? "" : line;
     }
@@ -53,7 +53,7 @@ public class Writer implements Runnable {
             this.out.close();
             this.socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
