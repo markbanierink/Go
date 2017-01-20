@@ -3,8 +3,8 @@
  */
 public class HumanPlayer extends Player {
 
-    HumanPlayer(String name, int boardsize, ClientHandler clientHandler) {
-        super(name, boardsize, clientHandler);
+    HumanPlayer(String name, int boardsize) {
+        super(name, boardsize);
     }
 
 }

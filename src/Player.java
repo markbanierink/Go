@@ -1,3 +1,5 @@
+import helper.Stone;
+
 /**
  * Created by mark.banierink on 16-1-2017.
  */
@@ -6,19 +8,11 @@ public class Player {
     private Stone stone;
     private String name;
     private int boardsize;
-//    private ClientHandler clientHandler;
     private Game game;
-
-//    Player(String name, int boardsize, ClientHandler clientHandler) {
-//        this.name = name;
-//        this.boardsize = boardsize;
-//        this.clientHandler = clientHandler;
-//    }
 
     Player(String name, int boardsize) {
         this.name = name;
         this.boardsize = boardsize;
-        //this.clientHandler = clientHandler;
     }
 
     public String getName() {
@@ -28,10 +22,6 @@ public class Player {
     public int getBoardsize() {
         return this.boardsize;
     }
-
-//    public ClientHandler getClientHandler() {
-//        return this.clientHandler;
-//    }
 
     public Stone getStone() {
         return this.stone;
@@ -67,7 +57,4 @@ public class Player {
         this.stone = stone;
     }
 
-//    public void handleClientOutput(String string) {
-//        getClientHandler().handleClientOutput(string);
-//    }
 }

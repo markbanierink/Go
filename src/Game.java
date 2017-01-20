@@ -1,34 +1,46 @@
 import com.nedap.go.gui.GoGUIIntegrator;
+import helper.Stone;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static helper.ComToolbox.*;
+import static helper.Stone.*;
 
 /**
  * Created by mark.banierink on 16-1-2017.
  */
 public class Game {
 
+    private int gameNumber;
     private List<Player> players = new ArrayList<>();
     private Board board;
-    private Stone turn = Stone.BLACK;;
+    private Stone turn = BLACK;
     private int turnCounter = 1;
-    private HashMap<Integer, Board> boardHistory = new HashMap<>();;
+    private HashMap<Integer, String> boardHistory = new HashMap<>();
     private GoGUIIntegrator goGui;
 
 
-    Game(Player player1, Player player2, int boardsize) {
+    Game(Player player1, Player player2, int boardsize, int gameNumber) {
+        assignStone(player1, player2);
         addPlayer(player1);
         addPlayer(player2);
         this.board = new Board(boardsize);
+        this.gameNumber = gameNumber;
         goGui = new GoGUIIntegrator(true, true, getBoard().getSize());
         getGui().startGUI();
+    }
+
+    public int getGameNumber() {
+        return this.gameNumber;
     }
 
     private Board getBoard() {
         return this.board;
     }
 
-    private HashMap<Integer, Board> getBoardHistory() {
+    private HashMap<Integer, String> getBoardHistory() {
         return this.boardHistory;
     }
 
@@ -44,20 +56,24 @@ public class Game {
         return this.players;
     }
 
+    public int getPlayerIndex(Player player) {
+        return getPlayers().indexOf(player);
+    }
+
     private GoGUIIntegrator getGui() {
         return this.goGui;
     }
 
-    private boolean isSuicide() {
+    private boolean isSuicide() {                                   // UITWERKEN
         return false;
     }
 
     private boolean isTurn(Player player) {
-        return player.getStone().equals(this.getTurn());
+        return player.getStone().equals(getTurn());
     }
 
     private static boolean stone2bool(Stone stone) {
-        return stone.equals(Stone.WHITE);
+        return stone.equals(WHITE);
     }
 
     private void addPlayer(Player player) {
@@ -69,8 +85,10 @@ public class Game {
         turnCounter++;
     }
 
-    private Stone randomStone() {
-        return Stone.BLACK;                                         // LEKKER HIGH-TECH, AANPASSEN..
+    private void assignStone(Player player1, Player player2) {
+        Stone stone = randomStone();
+        player1.setStone(stone);
+        player2.setStone(stone.other());
     }
 
     private void placeStone(int x, int y, Stone stone) {
@@ -83,12 +101,12 @@ public class Game {
         getGui().removeStone(x, y);
     }
 
-    public void handleClientInput(String string) {
+    public void handlePlayerInput(Player player, String string) {
 
     }
 
     public static void handleClientCommand(String string) {
-        String[] command = CommunicationToolbox.string2Command(string);
+        String[] command = splitString(string);
     }
 
     private void commandMove(Player player, int x, int y) {
@@ -109,6 +127,9 @@ public class Game {
         if (!isTurn(player)) {              // Check if it is this player's turn
             result = false;
         }
+        if (!getBoard().isField(x, y)) {
+            result = false;
+        }
         if (!getBoard().isEmpty(x, y)) {    // Check if the desired position is free
             result = false;
         }
@@ -123,23 +144,16 @@ public class Game {
     }
 
     private void copyBoard() {
-        Board boardCopy = new Board(getBoard().getSize());
-        for (int i = 0; i < getBoard().getSize(); i++) {
-            for (int j = 0; j < getBoard().getSize(); j++) {
-                boardCopy.setField(i, j, getBoard().getField(i, j));
-            }
-        }
-        getBoardHistory().put(getTurnNumber(), boardCopy);
+        getBoardHistory().put(getTurnNumber(), getBoard().board2string());
     }
 
     private boolean boardExists() {
-        boolean result = false;
-        for (HashMap.Entry<Integer, Board> historicBoard : getBoardHistory().entrySet()) {
-            if (getBoard().equals(historicBoard.getValue())) {                                    // NAKIJKEN OF EQUALS GOED IS!!!
-                result = true;
+        for (HashMap.Entry<Integer, String> historicBoard : getBoardHistory().entrySet()) {
+            if (getBoard().board2string().equals(historicBoard.getValue())) {
+                return true;
             }
         }
-        return result;
+        return false;
     }
 
 }

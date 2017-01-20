@@ -1,3 +1,5 @@
+import helper.Stone;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -24,6 +26,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public boolean hasGame() {
+        return getGame() != null;
+    }
+
     public Server getServer() {
         return this.server;
     }
@@ -37,11 +43,15 @@ public class ClientHandler implements Runnable {
     }
 
     public Stone getStone() {
-        return this.getPlayer().getStone();
+        return getPlayer().getStone();
     }
 
     public String getName() {
-        return this.getPlayer().getName();
+        return getPlayer().getName();
+    }
+
+    private boolean isPlayer() {
+        return (getPlayer() != null);
     }
 
     public void handleClientInput(String string) {
@@ -62,10 +72,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    private boolean isPlayer() {
-        return (getPlayer() != null);
     }
 
     public void writeString(String string) {
@@ -101,8 +107,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void setPlayer(String name, int boardsize, ClientHandler clientHandler) {
-        this.player = new Player(name, boardsize, clientHandler);
+    public void setPlayer(String name, int boardsize) {
+        this.player = new Player(name, boardsize);
     }
 
 

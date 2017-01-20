@@ -1,3 +1,7 @@
+import helper.Stone;
+
+import static helper.Stone.*;
+
 /**
  * Created by mark.banierink on 16-1-2017.
  */
@@ -21,7 +25,7 @@ public class Board {
     }
 
     public boolean isEmpty(int x, int y) {
-        return (getField(x, y) == Stone.EMPTY);
+        return (getField(x, y) == EMPTY);
     }
 
     public Stone getField(int x, int y) {
@@ -32,7 +36,7 @@ public class Board {
         return result;
     }
 
-    private boolean isField(int x, int y) {
+    public boolean isField(int x, int y) {
         return ( (x >= 0 && x < getSize()) && (y >= 0 && y < getSize()) );
     }
 
@@ -48,8 +52,18 @@ public class Board {
 
     public void emptyField(int x, int y) {
         if (!isEmpty(x, y)) {
-            setField(x, y, Stone.EMPTY);
+            setField(x, y, EMPTY);
         }
+    }
+
+    public String board2string() {
+        String boardString = "";
+        for (int i = 0; i < getSize(); i++) {
+            for (int j = 0; j < getSize(); j++) {
+                boardString += getField(i, j);
+            }
+        }
+        return boardString;
     }
 
 }
