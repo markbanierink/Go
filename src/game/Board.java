@@ -1,3 +1,5 @@
+package game;
+
 import helper.Stone;
 
 import static helper.Stone.*;
@@ -10,7 +12,7 @@ public class Board {
     private int size;
     private Stone[][] fields;
 
-    public Board(int boardsize) {
+    Board(int boardsize) {
         this.size = boardsize;
         this.fields = new Stone[boardsize][boardsize];
         clearBoard();

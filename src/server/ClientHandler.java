@@ -1,4 +1,6 @@
-import helper.Stone;
+package server;
+
+import server.Server;
 
 import java.io.*;
 import java.net.Socket;
@@ -10,12 +12,10 @@ public class ClientHandler implements Runnable {
 
     private Server server;
     private Socket socket;
-    private Game game = null;
-    private Player player = null;
     private BufferedReader in;
     private BufferedWriter out;
 
-    public ClientHandler(Server server, Socket socket) {
+    ClientHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
         try {

@@ -1,3 +1,5 @@
+package game;
+
 import com.nedap.go.gui.GoGUIIntegrator;
 import helper.Stone;
 
@@ -5,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static helper.ComToolbox.*;
-import static helper.Keyword.*;
 import static helper.Stone.*;
 
 /**
@@ -22,7 +22,7 @@ public class Game {
     private HashMap<Integer, String> boardHistory = new HashMap<>();
     private GoGUIIntegrator goGui;
 
-    Game(int boardsize, int gameNumber) {
+    public Game(int boardsize, int gameNumber) {
         this.board = new Board(boardsize);
         this.gameNumber = gameNumber;
     }
@@ -103,37 +103,16 @@ public class Game {
         getGui().addStone(x, y, stone2bool(stone));
     }
 
-    private void removeStone(int x, int y) {
-        getBoard().emptyField(x, y);
-        getGui().removeStone(x, y);
-    }
-
-    public void handlePlayerInput(Player player, String string) {
-        // bring player input to server?
-    }
-
-    public void handlePlayerOutput(Player player, String string) {
-        // bring server output to player?
-    }
-
-    public static void handleClientCommand(String string) {
-        String[] command = splitString(string);
-    }
-
-    private void commandMove(Player player, int x, int y) {
-
-    }
-
-    private void move(Player player, int x, int y) {
+    public void move(Player player, int x, int y) {
         if (isValidMove(player, x, y)) {
-            getBoard().setField(x, y, player.getStone());
+            placeStone(x, y, player.getStone());
             copyBoard();
             nextTurn();
             getGui().addStone(x, y, stone2bool(player.getStone()));
         }
     }
 
-    private boolean isValidMove(Player player, int x, int y) {
+    public boolean isValidMove(Player player, int x, int y) {
         boolean result = true;
         if (!isTurn(player)) {              // Check if it is this player's turn
             result = false;
@@ -155,7 +134,7 @@ public class Game {
     }
 
     private void copyBoard() {
-        getBoardHistory().put(getTurnNumber(), getBoard().board2string());
+        getBoardHistory().put(getTurnNumber(), getBoard().board2string());          // aanpassen naar dynamisch bord
     }
 
     private boolean boardExists() {

@@ -1,4 +1,6 @@
-import java.io.*;
+package client;
+
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -6,7 +8,7 @@ import java.net.UnknownHostException;
 /**
  * Created by mark.banierink on 16-1-2017.
  */
-public class Client {
+public class Client_temp {
 
     private final static String SERVER_ADDRESS = "localhost";
     private final static int SERVER_PORT = 2727;
@@ -15,17 +17,17 @@ public class Client {
     private Socket socket = null;
 
     public static void main(String[] args) {
-        new Client(SERVER_ADDRESS, SERVER_PORT);
+        new Client_temp(SERVER_ADDRESS, SERVER_PORT);
     }
 
-    public Client(String serverAddress, int serverPort) {
+    public Client_temp(String serverAddress, int serverPort) {
         this.inetAddress = getServerAddress(serverAddress);
         this.socket = getSocket(inetAddress, serverPort);
-        Thread reader = new Thread(new Reader(this.socket), "Client reader");
+        Thread reader = new Thread(new Reader(this.socket), "client.Client reader");
         reader.start();
-        Thread writer = new Thread(new Writer(this.socket), "Client writer");
+        Thread writer = new Thread(new Writer(this.socket), "client.Client writer");
         writer.start();
-        System.out.println("Client started");
+        System.out.println("client.Client started");
     }
 
     private InetAddress getServerAddress(String serverAddress) {

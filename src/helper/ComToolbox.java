@@ -72,15 +72,6 @@ public class ComToolbox {
         return word.equals(stone.toString());
     }
 
-    public static String[] commandGo(String string) {
-        String [] result = null;
-        String[] split = splitString(string);
-        if (isKeyword(split[0], GO)) {
-
-        }
-        return result;
-    }
-
     public static boolean isGo(String string) {
         if (string.length() > 0) {
             if (isKeyword(splitString(string)[0], GO)) {
@@ -218,6 +209,55 @@ public class ComToolbox {
             }
         }
         return false;
+    }
+
+    public static boolean isValidCommand(Keyword keyword, String string) {
+        boolean result = false;
+        switch (keyword) {
+            case GO:
+                result = isGo(string);
+                break;
+            case CANCEL:
+                result = isCancel(string);
+                break;
+            case MOVE:
+                result = isMove(string);
+                break;
+            case PASS:
+                result = isPass(string);
+                break;
+            case TABLEFLIP:
+                result = isTableflip(string);
+                break;
+            case CHAT:
+                result = isChat(string);
+                break;
+            case WAITING:
+                result = isWaiting(string);
+                break;
+            case READY:
+                result = isReady(string);
+                break;
+            case VALID:
+                result = isValid(string);
+                break;
+            case INVALID:
+                result = isInvalid(string);
+                break;
+            case PASSED:
+                result = isPassed(string);
+                break;
+            case TABLEFLIPPED:
+                result = isTableflipped(string);
+                break;
+            case WARNING:
+                result = isWarning(string);
+                break;
+            case END:
+                result = isEnd(string);
+                break;
+        }
+        return result;
     }
 
     public static boolean isServerCommand(String string) {

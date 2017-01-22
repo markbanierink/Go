@@ -1,3 +1,7 @@
+package client;
+
+import game.Player;
+
 /**
  * Created by mark.banierink on 16-1-2017.
  */
