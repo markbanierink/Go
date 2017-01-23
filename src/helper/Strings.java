@@ -7,10 +7,11 @@ public enum Strings {
 
     SPACE (" "),
     UNKNOWN_KEYWORD ("Unknown keyword"),
-    GAME_EXISTS ("You already started a game.."),
+    GAME_EXISTS ("You already started a game"),
     KICKED ("You are being kicked"),
     IS_KICKED ("is being kicked"),
-    SERVER_SHUTDOWN ("server.Server shuts down");
+    SERVER_SHUTDOWN ("Server shuts down"),
+    NO_SOCKET_AT_PORT ("Socket could not be made at requeste port. Please retry");
 
     private final String string;
 

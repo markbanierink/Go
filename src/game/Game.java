@@ -19,6 +19,7 @@ public class Game {
     private Board board;
     private Stone turn = BLACK;
     private int turnCounter = 1;
+    private int movesPerTurn = 1;
     private HashMap<Integer, String> boardHistory = new HashMap<>();
     private GoGUIIntegrator goGui;
 
@@ -35,6 +36,14 @@ public class Game {
         assignStone();
         goGui = new GoGUIIntegrator(true, true, getBoard().getSize());
         getGui().startGUI();
+    }
+
+    public int getMovesPerTurn() {
+        return this.movesPerTurn;
+    }
+
+    public void setMovesPerTurn(int movesPerTurn) {
+        this.movesPerTurn =  movesPerTurn;
     }
 
     public Board getBoard() {
@@ -57,16 +66,8 @@ public class Game {
         return this.players;
     }
 
-    public int getPlayerIndex(Player player) {
-        return getPlayers().indexOf(player);
-    }
-
     private GoGUIIntegrator getGui() {
         return this.goGui;
-    }
-
-    private boolean isSuicide() {                                   // UITWERKEN
-        return false;
     }
 
     private boolean isTurn(Player player) {
@@ -88,7 +89,9 @@ public class Game {
     }
 
     private void nextTurn() {
-        this.turn = this.turn.other();
+        if (getTurnNumber() % movesPerTurn == 0) {
+            this.turn = getTurn().other();
+        }
         turnCounter++;
     }
 
@@ -112,12 +115,20 @@ public class Game {
         }
     }
 
+    public boolean isValidPass(Player player) {
+        return isTurn(player);
+    }
+
+    public boolean isValidTableflip(Player player) {
+        return isTurn(player);
+    }
+
     public boolean isValidMove(Player player, int x, int y) {
         boolean result = true;
         if (!isTurn(player)) {              // Check if it is this player's turn
             result = false;
         }
-        if (!getBoard().isField(x, y)) {
+        if (!getBoard().isField(x, y)) {    // Check if the position exists
             result = false;
         }
         if (!getBoard().isEmpty(x, y)) {    // Check if the desired position is free
@@ -126,10 +137,6 @@ public class Game {
         if (boardExists()){                 // Check if it doesn't match a previous situation
             result = false;
         }
-        if (isSuicide()) {                  // Check if it isn't a suicide move
-            result = false;
-        }
-        // Etc.
         return result;
     }
 

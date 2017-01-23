@@ -1,7 +1,5 @@
 package server;
 
-import server.Server;
-
 import java.io.*;
 import java.net.Socket;
 
@@ -12,17 +10,17 @@ public class ClientHandler implements Runnable {
 
     private Server server;
     private Socket socket;
-    private BufferedReader in;
-    private BufferedWriter out;
+    private BufferedReader clientInput;
+    private BufferedWriter clientOutput;
 
     ClientHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
         try {
-            this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            this.out = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
+            this.clientInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+            this.clientOutput = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            getServer().printOutput(e.getMessage());
         }
     }
 
@@ -41,45 +39,45 @@ public class ClientHandler implements Runnable {
     public void run() {
         String line;
         try {
-            while ((line = in.readLine()) != null) {
+            while ((line = clientInput.readLine()) != null) {
                 handleClientInput(line);
             }
             shutDown();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            getServer().printOutput(e.getMessage());
         }
     }
 
     public void writeString(String string) {
         try {
-            this.out.write(string);
-            this.out.newLine();
-            this.out.flush();
+            this.clientOutput.write(string);
+            this.clientOutput.newLine();
+            this.clientOutput.flush();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            getServer().printOutput(e.getMessage());
         }
     }
 
-    public String readString(String text) {
-        System.out.print(text);
-        String line = null;
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-            line = in.readLine();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return (line == null) ? "" : line;
-    }
+//    public String readString(String text) {
+//        System.clientOutput.print(text);
+//        String line = null;
+//        try {
+//            BufferedReader clientInput = new BufferedReader(new InputStreamReader(System.clientInput));
+//            line = clientInput.readLine();
+//        } catch (IOException e) {
+//            System.clientOutput.println(e.getMessage());
+//        }
+//        return (line == null) ? "" : line;
+//    }
 
     public void shutDown() {
         try {
-            System.out.println("Stopping client writer...");
-            this.in.close();
-            this.out.close();
+            getServer().printOutput("ClientWriter closed");
+            this.clientInput.close();
+            this.clientOutput.close();
             this.socket.close();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            getServer().printOutput(e.getMessage());
         }
     }
 
