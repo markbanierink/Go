@@ -13,7 +13,7 @@ public class ClientHandler implements Runnable {
     private BufferedReader clientInput;
     private BufferedWriter clientOutput;
 
-    ClientHandler(Server server, Socket socket) {
+    public ClientHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
         try {

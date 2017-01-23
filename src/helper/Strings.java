@@ -11,7 +11,7 @@ public enum Strings {
     KICKED ("You are being kicked"),
     IS_KICKED ("is being kicked"),
     SERVER_SHUTDOWN ("Server shuts down"),
-    NO_SOCKET_AT_PORT ("Socket could not be made at requeste port. Please retry");
+    NO_SOCKET_AT_PORT ("Socket could not be made at requested port. Please retry");
 
     private final String string;
 

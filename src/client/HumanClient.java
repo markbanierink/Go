@@ -12,7 +12,7 @@ public class HumanClient extends Client {
         new HumanClient(SERVER_ADDRESS, SERVER_PORT);
     }
 
-    HumanClient(String serverAddress, int serverPort) {
+    public HumanClient(String serverAddress, int serverPort) {
         super(serverAddress, serverPort);
         Thread consoleReader = new Thread(new ConsoleReader(this), "ConsoleReader");
         consoleReader.start();

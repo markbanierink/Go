@@ -1,9 +1,9 @@
-package test;
+package game;
 
 import org.junit.jupiter.api.Test;
 
 /**
  * Created by mark.banierink on 21-1-2017.
  */
-public class HumanClientTest {
+public class GameTest {
 }

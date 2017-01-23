@@ -36,7 +36,7 @@ public class Server {
             printOutput(NO_SOCKET_AT_PORT.toString());
             serverSocket = createServerSocket();
         }
-        printOutput("Socket made");
+        printOutput("ServerSocket made");
         Socket socket = null;
         while (serverLoop) {
             if (isClientHandlerAvailable()) {
@@ -50,16 +50,21 @@ public class Server {
         shutDown(socket, serverSocket, SERVER_SHUTDOWN.toString());
     }
 
-    private int getPortNumber() {
-        int port = -1;
+    private String getConsoleInput(String question) {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print("Enter port number: ");
-        String portString = "";
+        System.out.print(question);
+        String consoleInput = "";
         try {
-            portString = bufferedReader.readLine();
+            consoleInput = bufferedReader.readLine();
         } catch (IOException e) {
             printOutput(e.getMessage());
         }
+        return consoleInput;
+    }
+
+    private int getPortNumber() {
+        int port = -1;
+        String portString = getConsoleInput("Enter port number: ");
         if (isInteger(portString)) {
             port = Integer.parseInt(portString);
         }
@@ -150,17 +155,17 @@ public class Server {
                     }
                 } else {
                     game.addPlayer(player);
-                    printOutput("Player added to existing game");
+                    printOutput("Player added to Game " + game.getGameNumber());
                 }
                 game.startGame();
                 broadcastReadyCommand(game);
-                printOutput("Game started");
+                printOutput("Game " + game.getGameNumber() + " started");
                 return;
             }
         }
         Game newGame = createGame(boardsize);
         newGame.addPlayer(player);
-        printOutput("New game added to list");
+        printOutput("New Game " + newGame.getGameNumber() + " added to list");
     }
 
     private int numberOfPlayers() {
@@ -222,7 +227,7 @@ public class Server {
     }
 
     public void handleClientInput(ClientHandler clientHandler, String string) {
-        printOutput(getPlayer(clientHandler).getName() + ": " + string);
+        //printOutput(getPlayer(clientHandler).getName() + ": " + string);
         if (isValidCommand(GO, string)) {
             commandGo(clientHandler, string);
         } else if (isValidCommand(CANCEL, string)) {

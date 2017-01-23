@@ -12,7 +12,7 @@ public class ComputerClient extends Client {
         new ComputerClient(SERVER_ADDRESS, SERVER_PORT);
     }
 
-    ComputerClient(String serverAddress, int serverPort) {
+    public ComputerClient(String serverAddress, int serverPort) {
         super(serverAddress, serverPort);
         System.out.println("ComputerClient started");
     }

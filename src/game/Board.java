@@ -12,7 +12,7 @@ public class Board {
     private int size;
     private Stone[][] fields;
 
-    Board(int boardsize) {
+    public Board(int boardsize) {
         this.size = boardsize;
         this.fields = new Stone[boardsize][boardsize];
         clearBoard();

@@ -14,7 +14,7 @@ public class Client {
 
     private BufferedWriter serverInput;
 
-    Client(String serverAddress, int serverPort) {
+    public Client(String serverAddress, int serverPort) {
         InetAddress inetAddress = getServerAddress(serverAddress);
         Socket socket = getSocket(inetAddress, serverPort);
         Thread socketReader = new Thread(new SocketReader(socket), "SocketReader");
