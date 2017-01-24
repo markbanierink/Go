@@ -15,28 +15,31 @@ import static helper.Strings.*;
 
 /**
  * Created by mark.banierink on 16-1-2017.
+ * This class handles the server-side of the game.
+ * No arguments are required.
  */
 public class Server {
 
     private static final int MAX_CLIENTS = 10;              // Maximum number of clients that can connect to the server
 
     private HashMap<ClientHandler, Date> clientHandlers = new HashMap<>();
-    private HashMap<Player, ClientHandler> players = new HashMap<>();
-    private List<Game> games = new ArrayList<>();
+    private HashMap<Player, ClientHandler> playersList = new HashMap<>();
+    private List<Game> gamesList = new ArrayList<>();
     private boolean serverLoop = true;
-    private static final boolean MATCH_BOARDSIZE = false;   // FALSE: conform second player, TRUE: players matched on boardsize
+    private boolean matchBoardsize = false;
 
     public static void main(String[] args) {
         new Server();
     }
 
+    /**
+     * Constructor of Server. No input arguments are required.
+     */
     public Server() {
+        printOutput("Starting Server");
         ServerSocket serverSocket = createServerSocket();
-        while (serverSocket == null) {
-            printOutput(NO_SOCKET_AT_PORT.toString());
-            serverSocket = createServerSocket();
-        }
         printOutput("ServerSocket made");
+        matchBoardsize();
         Socket socket = null;
         while (serverLoop) {
             if (isClientHandlerAvailable()) {
@@ -62,26 +65,46 @@ public class Server {
         return consoleInput;
     }
 
-    private int getPortNumber() {
-        int port = -1;
-        String portString = getConsoleInput("Enter port number: ");
-        if (isInteger(portString)) {
-            port = Integer.parseInt(portString);
-        }
-        return port;
+    private boolean getMatchBoardsize() {
+        return this.matchBoardsize;
     }
 
-    private ServerSocket createServerSocket()  {
+    private void matchBoardsize() {
+        boolean answered = false;
+        while (!answered) {
+            String matchString = getConsoleInput("Match players on board size (y/n): ");
+            if (matchString.equals("y")) {
+                this.matchBoardsize = true;
+                answered = true;
+            } else if (matchString.equals("n")) {
+                this.matchBoardsize = false;
+                answered = true;
+            }
+        }
+    }
+
+    private int getPortNumber() {
+        while (true) {
+            String portString = getConsoleInput("Enter port number: ");
+            if (isInteger(portString)) {
+                if (Integer.parseInt(portString) >= 0 && Integer.parseInt(portString) <= 65535) {
+                    return Integer.parseInt(portString);
+                }
+            }
+            printOutput(INVALID_PORT_NUMBER.toString());
+        }
+    }
+
+    private ServerSocket createServerSocket() {
         int port = getPortNumber();
-        ServerSocket serverSocket = null;
-        if (port >= 0 && port <= 65535) {
+        while (true) {
             try {
-                serverSocket = new ServerSocket(port);
+                return new ServerSocket(port);
             } catch (IOException e) {
+                printOutput(SERVER_SOCKET_NOT_POSSIBLE.toString());
                 printOutput(e.getMessage());
             }
         }
-        return serverSocket;
     }
 
     private Socket createSocket(ServerSocket serverSocket) {
@@ -103,13 +126,13 @@ public class Server {
     }
 
     private ClientHandler getClientHandler(Player player) {
-        return players.get(player);
+        return playersList.get(player);
     }
 
     private Player getPlayer(ClientHandler clientHandler) {
         Player player = null;
-        for (Player listedPlayer : players.keySet()) {
-            if (players.get(listedPlayer).equals(clientHandler)) {
+        for (Player listedPlayer : playersList.keySet()) {
+            if (playersList.get(listedPlayer).equals(clientHandler)) {
                 player = listedPlayer;
             }
         }
@@ -120,81 +143,91 @@ public class Server {
         return getPlayer(clientHandler) != null;
     }
 
+    private HashMap<ClientHandler, Date> getClientHandlers() {
+        return this.clientHandlers;
+    }
+
     private synchronized void listClientHandler(ClientHandler clientHandler) {
         Date date = new Date();
-        clientHandlers.put(clientHandler, date);
-        printOutput("ClientHandler listed " + date.toString());
+        getClientHandlers().put(clientHandler, date);
+        printOutput("ClientHandler listed on " + date.toString());
     }
 
     private synchronized void removeListedClientHandler(ClientHandler clientHandler) {
-        clientHandlers.remove(clientHandler);
+        getClientHandlers().remove(clientHandler);
         printOutput("ClientHandler removed");
     }
 
+    private HashMap<Player, ClientHandler> getPlayersList() {
+        return this.playersList;
+    }
+
     private synchronized void listPlayer(Player player, ClientHandler clientHandler) {
-        players.put(player, clientHandler);
+        getPlayersList().put(player, clientHandler);
         printOutput(player.getName() + " listed");
     }
 
     private synchronized void removeListedPlayer(Player player) {
-        players.remove(player);
+        getPlayersList().remove(player);
         printOutput(player.getName() + " removed");
     }
 
-    private synchronized void removeListedGame(Game game) {
-        games.remove(game);
-        printOutput("Game " + game.getGameNumber() + " removed");
+    private List<Game> getGamesList() {
+        return this.gamesList;
     }
 
-    private synchronized void matchWithListedPlayer(Player player, int boardsize) {
-        for (Game game : games) {
-            if (game.getPlayers().size() == 1) {
-                if (MATCH_BOARDSIZE) {
-                    if (game.getBoard().getSize() == boardsize) {
-                        game.addPlayer(player);
-                    }
-                } else {
-                    game.addPlayer(player);
-                    printOutput("Player added to Game " + game.getGameNumber());
+    private synchronized void removeListedGame(Game game) {
+        getGamesList().remove(game);
+        printOutput("Game " + getGamesList().indexOf(game) + " removed");
+    }
+
+    private void matchWithListedPlayer(Player player, int boardsize) {
+        boolean match = false;
+        for (Game game : getGamesList()) {
+            if (game.getGamePlayers().size() == 1) {
+                if (getMatchBoardsize() && game.getBoard().getBoardsize() == boardsize) {
+                    match = true;
+                } else if (!getMatchBoardsize()) {
+                    match = true;
                 }
+            }
+            if (match) {
+                game.addPlayer(player);
+                printOutput("Player added to Game " + gamesList.indexOf(game));
                 game.startGame();
                 broadcastReadyCommand(game);
-                printOutput("Game " + game.getGameNumber() + " started");
+                printOutput("Game " + gamesList.indexOf(game) + " started");
                 return;
             }
         }
         Game newGame = createGame(boardsize);
         newGame.addPlayer(player);
-        printOutput("New Game " + newGame.getGameNumber() + " added to list");
+        printOutput("New Game " + gamesList.indexOf(newGame) + " added to list");
     }
 
     private int numberOfPlayers() {
-        return players.size();
-    }
-
-    private int createGameNumber() {
-        return games.size() + 1;
+        return playersList.size();
     }
 
     private synchronized void listGame(Game game) {
-        games.add(game);
-        printOutput("Game " + game.getGameNumber() + " listed");
+        getGamesList().add(game);
+        printOutput("Game " + gamesList.indexOf(game) + " listed");
     }
 
     private Game createGame(int boardsize) {
-        Game game = new Game(boardsize, createGameNumber());
+        Game game = new Game(boardsize);
         listGame(game);
         return game;
     }
 
-    public void broadcastGame(Game game, String message) {
-        for (Player player : game.getPlayers()) {
+    private void broadcastGame(Game game, String message) {
+        for (Player player : game.getGamePlayers()) {
             handleClientOutput(getClientHandler(player), message);
         }
     }
 
-    public void broadcastPlayers(String string) {
-        for (ClientHandler clientHandler : players.values()) {
+    private void broadcastPlayers(String string) {
+        for (ClientHandler clientHandler : playersList.values()) {
             handleClientOutput(clientHandler, string);
         }
     }
@@ -205,14 +238,19 @@ public class Server {
         }
     }
 
-    public void broadcastReadyCommand(Game game) {
-        for (Player player : game.getPlayers()) {
-            String string = READY.toString() + SPACE + player.getStone().toString() + SPACE + player.getOpponent().getName() + SPACE + game.getBoard().getSize();
-            handleClientOutput(getClientHandler(player), string);
+    private void broadcastReadyCommand(Game game) {
+        for (Player player : game.getGamePlayers()) {
+            List<Player> opponents = game.getOpponents(player);
+            if (opponents.size() == 1) {
+                String string = READY.toString() + SPACE + player.getStone().toString().toLowerCase() + SPACE + opponents.get(0).getName() + SPACE + game.getBoard().getBoardsize();
+                handleClientOutput(getClientHandler(player), string);
+            } else {
+                printOutput("Multiple opponents not yet implemented!");
+            }
         }
     }
 
-    public Player createPlayer(ClientHandler clientHandler, String string) {
+    private Player createPlayer(ClientHandler clientHandler, String string) {
         String[] split = splitString(string);
         Player player = new Player(split[1]);
         listPlayer(player, clientHandler);
@@ -221,27 +259,53 @@ public class Server {
         return player;
     }
 
-    public void newPlayer(ClientHandler clientHandler, String string) {
+    private void newPlayer(ClientHandler clientHandler, String string) {
         Player player = createPlayer(clientHandler, string);
         matchWithListedPlayer(player, Integer.parseInt(splitString(string)[2]));
     }
 
-    public void handleClientInput(ClientHandler clientHandler, String string) {
-        //printOutput(getPlayer(clientHandler).getName() + ": " + string);
-        if (isValidCommand(GO, string)) {
-            commandGo(clientHandler, string);
-        } else if (isValidCommand(CANCEL, string)) {
-            commandCancel(clientHandler);
-        } else if (isValidCommand(MOVE, string)) {
-            commandMove(clientHandler, string);
-        } else if (isValidCommand(PASS, string)) {
-            commandPass(clientHandler);
-        } else if (isValidCommand(TABLEFLIP, string)) {
-            commandTableflip(clientHandler);
-        } else if (isValidCommand(CHAT, string)) {
-            commandChat(clientHandler, string);
+    private Game getPlayerGame(Player player) {
+        for (Game listedGame : getGamesList()) {
+            for (Player listedPlayer : listedGame.getGamePlayers()) {
+                if (player.equals(listedPlayer)) {
+                    return listedGame;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected void handleClientInput(ClientHandler clientHandler, String string) {
+        String name = "[New Client]";
+        if (getPlayer(clientHandler) != null) {
+            name = getPlayer(clientHandler).getName();
+        }
+        printOutput(name + ": " + string);
+        if (getPlayer(clientHandler) == null) {
+            if (isValidCommand(GO, string)) {
+                commandGo(clientHandler, string);
+            } else {
+                noCommand(clientHandler);
+            }
         } else {
-            noCommand(clientHandler);
+            if (isValidCommand(CANCEL, string)) {
+                Game game = getPlayerGame(getPlayer(clientHandler));
+                if (game != null && (game.getGamePlayers().size() == 1)) {
+                    commandCancel(clientHandler);
+                } else {
+                    noCommand(clientHandler);
+                }
+            } else if (isValidCommand(MOVE, string)) {
+                commandMove(clientHandler, string);
+            } else if (isValidCommand(PASS, string)) {
+                commandPass(clientHandler);
+            } else if (isValidCommand(TABLEFLIP, string)) {
+                commandTableflip(clientHandler);
+            } else if (isValidCommand(CHAT, string)) {
+                commandChat(clientHandler, string);
+            } else {
+                noCommand(clientHandler);
+            }
         }
     }
 
@@ -254,48 +318,73 @@ public class Server {
     }
 
     private void commandCancel(ClientHandler clientHandler) {
-        deleteGame(getPlayer(clientHandler).getGame());
+        deleteGame(getGame(getPlayer(clientHandler)));
         deletePlayer(getPlayer(clientHandler));
+    }
+
+    private Game getGame(Player player) {
+        Game game = null;
+        for (Game listedGame : getGamesList()) {
+            for (Player listedPlayer : listedGame.getGamePlayers()) {
+                if (listedPlayer.equals(player)) {
+                    game = listedGame;
+                }
+            }
+        }
+        return game;
     }
 
     private void commandMove(ClientHandler clientHandler, String string) {
         Player player = getPlayer(clientHandler);
-        Game game = player.getGame();
+        Game game = getGame(player);
         int x = Integer.parseInt(splitString(string)[1]);
         int y = Integer.parseInt(splitString(string)[2]);
-        if (game.isValidMove(player, x, y)) {
-            game.move(player, x, y);
-            String message = VALID.toString() + SPACE + player.getStone() + SPACE + x + SPACE + y;
-            broadcastGame(game, message);
+        String response = game.checkMoveValidity(player.getStone(), x, y);
+        if (response.equals(VALID.toString())) {
+            game.move(player.getStone(), x, y);
+            String message = SPACE + player.getStone().toString() + SPACE + x + SPACE + y;
+            broadcastGame(game, VALID + message.toLowerCase());
         } else {
-            kickClient(clientHandler);
+            String reason = INVALID.toString() + SPACE + player.getStone().toString().toLowerCase() + response.toLowerCase();
+            kickClient(clientHandler, reason);
         }
     }
 
     private void commandPass(ClientHandler clientHandler) {
         Player player = getPlayer(clientHandler);
-        Game game = player.getGame();
-        if (game.isValidPass(player)) {
-            broadcastGame(game, PASSED.toString() + SPACE + player.getStone());
+        Game game = getGame(player);
+        if (game.isValidPass(player.getStone())) {
+            String response = game.pass();
+            if (response.equals("")) {
+                String message = SPACE + player.getStone().toString();
+                broadcastGame(game, PASSED + message.toLowerCase());
+            } else {
+                broadcastGame(game, response);
+                deleteGame(game);
+            }
+
         }
     }
 
     private void commandTableflip(ClientHandler clientHandler) {
         Player player = getPlayer(clientHandler);
-        Game game = player.getGame();
-        if (game.isValidTableflip(player)) {
-            broadcastGame(game, TABLEFLIPPED.toString() + SPACE + player.getStone());
-//            broadcastGame(game, END.toString() + SPACE + blackScore + SPACE + whiteScore);
+        Game game = getGame(player);
+        if (game.isValidTableflip(player.getStone())) {
+            game.tableflip();
+            String message = SPACE + player.getStone().toString();
+            broadcastGame(game, TABLEFLIPPED + message.toLowerCase());
+            //broadcastGame(game, END.toString() + SPACE + blackScore + SPACE + whiteScore);        End of game should be reported from Game
             deleteGame(game);
             deletePlayer(player);
         }
     }
 
     private void commandChat(ClientHandler clientHandler, String string) {
+        Player player = getPlayer(clientHandler);
         String message = string.substring(splitString(string)[0].length());
-        String sender = getPlayer(clientHandler).getName();
+        String sender = player.getName();
         String chatMessage = CHAT.toString() + SPACE + sender + ":" + SPACE + message;
-        handleClientOutput(getClientHandler(getPlayer(clientHandler).getOpponent()), chatMessage);
+        handleClientOutput(getClientHandler(getGame(player).getOpponents(player).get(0)), chatMessage);
     }
 
     private void noCommand(ClientHandler clientHandler) {
@@ -304,25 +393,27 @@ public class Server {
 
     private void deletePlayer(Player player) {
         removeListedPlayer(player);
-        player.getGame().removePlayer(player);
+        getGame(player).removePlayer(player);
     }
 
     private void deleteGame(Game game) {
-        for (Player player : game.getPlayers()) {
+        for (Player player : game.getGamePlayers()) {
             deletePlayer(player);
         }
         removeListedGame(game);
     }
 
-    public void kickClient(ClientHandler clientHandler) {
-        handleClientOutput(clientHandler, KICKED.toString());
+    private void kickClient(ClientHandler clientHandler, String reason) {
+        handleClientOutput(clientHandler, reason);
+        handleClientOutput(clientHandler, CHAT.toString() + SPACE + SERVER + ":" + SPACE + KICKED);
         if (isPlayer(clientHandler)) {
-            if (getPlayer(clientHandler).getGame().getPlayers().size() == 0) {
-                                                                                                    // keep game if another player is still serverOutput it?
-                deleteGame(getPlayer(clientHandler).getGame());
+            Player player = getPlayer(clientHandler);
+            if (getGame(getPlayer(clientHandler)).getGamePlayers().size() == 0) {
+                                                                                                    // keep game if another player is still in it?
+                deleteGame(getGame(getPlayer(clientHandler)));
                                                                                                     // delete instance of game?
             } else {
-                handleClientOutput(getClientHandler(getPlayer(clientHandler).getOpponent()), getPlayer(clientHandler).getName() + SPACE + IS_KICKED);
+                handleClientOutput(getClientHandler(getGame(player).getOpponents(player).get(0)), getPlayer(clientHandler).getName() + SPACE + IS_KICKED);
             }
             deletePlayer(getPlayer(clientHandler));
         }
@@ -330,11 +421,11 @@ public class Server {
         clientHandler.shutDown();
     }
 
-    public void handleClientOutput(ClientHandler clientHandler, String string) {
+    private void handleClientOutput(ClientHandler clientHandler, String string) {
         clientHandler.handleClientOutput(string);
     }
 
-    public void printOutput(String string) {
+    protected void printOutput(String string) {
         System.out.println(string);
     }
 
@@ -350,7 +441,6 @@ public class Server {
         } catch (IOException e) {
             printOutput(e.getMessage());
         }
-
     }
 
 }

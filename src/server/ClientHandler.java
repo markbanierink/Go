@@ -5,6 +5,7 @@ import java.net.Socket;
 
 /**
  * Created by mark.banierink on 17-1-2017.
+ * The ClientHandler can run as a separate thread. It manages the incoming and outgoing buffer stream from Server to Client.
  */
 public class ClientHandler implements Runnable {
 
@@ -13,6 +14,11 @@ public class ClientHandler implements Runnable {
     private BufferedReader clientInput;
     private BufferedWriter clientOutput;
 
+    /**
+     * Constructor of the ClientHandler
+     * @param server Server object
+     * @param socket Socket for the buffer stream communication
+     */
     public ClientHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
@@ -24,18 +30,22 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public Server getServer() {
+    private Server getServer() {
         return this.server;
     }
 
-    public void handleClientInput(String string) {
+    private void handleClientInput(String string) {
         getServer().handleClientInput(this, string);
     }
 
-    public void handleClientOutput(String string) {
+    protected void handleClientOutput(String string) {
         writeString(string);
     }
 
+    /**
+     * Run method that is started as soon as ClientHandler is started in a separate thread. It reads the client input
+     * and passes this through to the server
+     */
     public void run() {
         String line;
         try {
@@ -48,7 +58,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void writeString(String string) {
+    private void writeString(String string) {
         try {
             this.clientOutput.write(string);
             this.clientOutput.newLine();
@@ -58,19 +68,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-//    public String readString(String text) {
-//        System.clientOutput.print(text);
-//        String line = null;
-//        try {
-//            BufferedReader clientInput = new BufferedReader(new InputStreamReader(System.clientInput));
-//            line = clientInput.readLine();
-//        } catch (IOException e) {
-//            System.clientOutput.println(e.getMessage());
-//        }
-//        return (line == null) ? "" : line;
-//    }
-
-    public void shutDown() {
+    protected void shutDown() {
         try {
             getServer().printOutput("ClientWriter closed");
             this.clientInput.close();

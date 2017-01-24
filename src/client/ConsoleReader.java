@@ -26,8 +26,8 @@ public class ConsoleReader implements Runnable {
         return this.client;
     }
 
-    public String readString(String tekst) {
-        System.out.print(tekst);
+    private String readString(String string) {
+        System.out.print(string);
         String line = null;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));

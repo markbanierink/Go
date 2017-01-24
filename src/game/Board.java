@@ -6,12 +6,18 @@ import static helper.Stone.*;
 
 /**
  * Created by mark.banierink on 16-1-2017.
+ * The Board class represents the board on which the game is played
  */
 public class Board {
 
     private int size;
     private Stone[][] fields;
+    private String boardString;
 
+    /**
+     * The constructor of the board
+     * @param boardsize integer representing the board size
+     */
     public Board(int boardsize) {
         this.size = boardsize;
         this.fields = new Stone[boardsize][boardsize];
@@ -19,18 +25,18 @@ public class Board {
     }
 
     private void clearBoard() {
-        for (int i = 0; i < getSize(); i++) {
-            for (int j = 0; j < getSize(); j++) {
+        for (int i = 0; i < getBoardsize(); i++) {
+            for (int j = 0; j < getBoardsize(); j++) {
                 emptyField(i, j);
             }
         }
     }
 
-    public boolean isEmpty(int x, int y) {
+    protected boolean isEmpty(int x, int y) {
         return (getField(x, y) == EMPTY);
     }
 
-    public Stone getField(int x, int y) {
+    private Stone getField(int x, int y) {
         Stone result = null;
         if (isField(x, y)) {
             result = this.fields[x][y];
@@ -38,30 +44,45 @@ public class Board {
         return result;
     }
 
-    public boolean isField(int x, int y) {
-        return ( (x >= 0 && x < getSize()) && (y >= 0 && y < getSize()) );
+    protected boolean isField(int x, int y) {
+        return ( (x >= 0 && x < getBoardsize()) && (y >= 0 && y < getBoardsize()) );
     }
 
-    public int getSize() {
+    /**
+     * returns the size of this board
+     * @return integer with the board size
+     */
+    public int getBoardsize() {
         return this.size;
     }
 
-    public void setField(int x, int y, Stone stone) {
+    protected Board setField(int x, int y, Stone stone) {
         if (isField(x, y)) {
             this.fields[x][y] = stone;
         }
+        return this;
     }
 
-    public void emptyField(int x, int y) {
+    private void emptyField(int x, int y) {
         if (!isEmpty(x, y)) {
             setField(x, y, EMPTY);
         }
     }
 
-    public String board2string() {
+    protected Board boardCopy() {
+        Board newBoard = new Board(getBoardsize());
+        for (int i = 0; i < getBoardsize(); i++) {
+            for (int j = 0; j < getBoardsize(); j++) {
+                newBoard.setField(i, j, getField(i, j));
+            }
+        }
+        return newBoard;
+    }
+
+    protected String boardToString() {
         String boardString = "";
-        for (int i = 0; i < getSize(); i++) {
-            for (int j = 0; j < getSize(); j++) {
+        for (int i = 0; i < this.getBoardsize(); i++) {
+            for (int j = 0; j < this.getBoardsize(); j++) {
                 boardString += getField(i, j);
             }
         }

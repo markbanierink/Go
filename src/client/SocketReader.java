@@ -9,10 +9,12 @@ import java.net.Socket;
 public class SocketReader implements Runnable {
 
     private Socket socket = null;
-    protected BufferedReader serverOutput;
+    private Client client = null;
+    private BufferedReader serverOutput;
 
-    public SocketReader(Socket socket) {
+    public SocketReader(Socket socket, Client client) {
         this.socket = socket;
+        this.client = client;
         try {
             this.serverOutput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
         } catch (IOException e) {
@@ -24,6 +26,7 @@ public class SocketReader implements Runnable {
         String line;
         try {
             while ((line = serverOutput.readLine()) != null) {
+                client.handleServerOutput(line);
                 System.out.println(line);
             }
             shutDown();
@@ -32,7 +35,7 @@ public class SocketReader implements Runnable {
         }
     }
 
-    public void shutDown() {
+    private void shutDown() {
         try {
             System.out.println("Stopping SocketReader");
             this.serverOutput.close();
