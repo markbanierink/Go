@@ -7,19 +7,19 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Created by mark.banierink on 25-1-2017.
  */
-class ServerTest {
+class ClientHandlerTest {
     @Test
-    void testMain() {
+    void testHandleClientOutput() {
 
     }
 
     @Test
-    void testHandleClientInput() {
+    void testRun() {
 
     }
 
     @Test
-    void testPrintOutput() {
+    void testShutDown() {
 
     }
 

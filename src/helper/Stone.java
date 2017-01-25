@@ -1,37 +1,43 @@
 package helper;
 
+import java.util.Random;
+
 /**
  * Created by mark.banierink on 16-1-2017.
  * Provides the Stones used in the game
  */
 public enum Stone {
 
-    EMPTY, BLACK, WHITE;
+    EMPTY, BLACK, WHITE, RED, GREEN, BLUE, YELLOW;
 
     /**
      * Method to get the Stone of the opponent
-     * @return BLACK if current stone is WHITE, WHITE if current Stone is BLACK
+     * @return Enum of the next stone in the Enum list, EMPTY if the current stone cannot be found
      */
-    public Stone other() {
-        if (this == BLACK) {
-            return WHITE;
-        } else if (this == WHITE) {
-            return BLACK;
-        } else {
-            return EMPTY;
+    public Stone nextStone(int numPlayers) {
+        int i = 0;
+        Stone[] stones = Stone.values();
+        for (Stone stone : stones) {
+            if (this == stone) {
+                if (i == numPlayers) {
+                    i = 0;
+                } else if (i > numPlayers) {
+                    i = -1;
+                }
+                return Stone.values()[i+1];
+            }
+            i++;
         }
+        return EMPTY;
     }
 
     /**
      * Random generator to choose a random stone
-     * @return BLACK or WHITE
+     * @return Stone Enum, but never the first element (EMPTY)
      */
-    public static Stone randomStone() {
-       if (Math.random() < 0.5) {
-           return BLACK;
-       } else {
-           return WHITE;
-       }
+    public static Stone randomStone(int numPlayers) {
+        int randomValue = (new Random()).nextInt(numPlayers) + 1;
+        return Stone.values()[randomValue];
     }
 
 }

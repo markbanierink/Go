@@ -22,7 +22,7 @@ public class ComToolbox {
         }
     }
 
-    private static boolean isKeyword(String word, Keyword keyword) {
+    private static boolean equalsKeyword(String word, Keyword keyword) {
         return word.equals(keyword.toString());
     }
 
@@ -32,7 +32,7 @@ public class ComToolbox {
      * @return String array with the separate elements, one element if no split was found
      */
     public static String[] splitString(String string) {
-        return string.split(" ");
+        return string.split(SPACE.toString());
     }
 
     private static int length(String[] split) {
@@ -53,18 +53,9 @@ public class ComToolbox {
         }
     }
 
-    private static boolean isDouble(String word) {
-        try {
-            Double.parseDouble(word);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
     private static boolean isStone(String word) {
         for (Stone stone : Stone.values()) {
-            if(isStone(word, stone)) {
+            if(isSameStone(word, stone)) {
                 return true;
             }
         }
@@ -73,12 +64,12 @@ public class ComToolbox {
 
     /**
      * Checks if the given board size is allowed
-     * @param boardsize the requested board size
+     * @param boardSize the requested board size
      * @return true if board size is allow, false if not
      */
-    public static boolean isBoardsize(int boardsize) {                                      // make more dynamic!!!
-        if (boardsize >= 5 && boardsize <= 131) {
-            if (isOdd(boardsize)) {
+    public static boolean isBoardSize(int boardSize) {                                      // make more dynamic!!!
+        if (boardSize >= 5 && boardSize <= 131) {
+            if (isOdd(boardSize)) {
                 return true;
             }
         }
@@ -89,25 +80,25 @@ public class ComToolbox {
         return (number % 2 == 1);
     }
 
-    private static boolean isStone(String word, Stone stone) {
+    private static boolean isSameStone(String word, Stone stone) {
         return word.equals(stone.toString());
     }
 
     /**
      * Creates a proper GO command from the provided arguments
-     * @param name must be a string without spaces
-     * @param boardsize the board size integer
+     * @param name must be a string without spaces, isn't checked
+     * @param boardSize the board size integer, isn't checked
      * @return String that can be used as a commando for the server
      */
-    public static String createCommandGo(String name, int boardsize) {
-        return GO.toString() + SPACE + name + SPACE + boardsize;
+    public static String createCommandGo(String name, int boardSize) {
+        return GO.toString() + SPACE + name + SPACE + boardSize;
     }
 
     private static boolean isGo(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], GO)) {
+            if (equalsKeyword(splitString(string)[0], GO)) {
                 if ((length(splitString(string)) == 3) && isInteger(splitString(string)[2])) {
-                    return isBoardsize(Integer.parseInt(splitString(string)[2]));
+                    return isBoardSize(Integer.parseInt(splitString(string)[2]));
                 }
             }
         }
@@ -116,7 +107,7 @@ public class ComToolbox {
 
     private static boolean isWaiting(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], WAITING)) {
+            if (equalsKeyword(splitString(string)[0], WAITING)) {
                 return (length(splitString(string)) == 1);
             }
         }
@@ -125,7 +116,7 @@ public class ComToolbox {
 
     private static boolean isCancel(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], CANCEL)) {
+            if (equalsKeyword(splitString(string)[0], CANCEL)) {
                 return (length(splitString(string)) == 1);
             }
         }
@@ -134,7 +125,7 @@ public class ComToolbox {
 
     private static boolean isReady(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], READY)) {
+            if (equalsKeyword(splitString(string)[0], READY)) {
                 return ((length(splitString(string)) == 4) &&
                         isStone(splitString(string)[1]) &&
                         isInteger(splitString(string)[3]));
@@ -145,7 +136,7 @@ public class ComToolbox {
 
     private static boolean isMove(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], MOVE)) {
+            if (equalsKeyword(splitString(string)[0], MOVE)) {
                 return ((length(splitString(string)) == 3) &&
                         isInteger(splitString(string)[1]) &&
                         isInteger(splitString(string)[2]));
@@ -156,7 +147,7 @@ public class ComToolbox {
 
     private static boolean isValid(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], VALID)) {
+            if (equalsKeyword(splitString(string)[0], VALID)) {
                 return ((length(splitString(string)) == 4) &&
                         isStone(splitString(string)[1]) &&
                         isInteger(splitString(string)[2]) &&
@@ -168,7 +159,7 @@ public class ComToolbox {
 
     private static boolean isInvalid(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], INVALID)) {
+            if (equalsKeyword(splitString(string)[0], INVALID)) {
                 return (length(splitString(string)) == 3) &&
                         isStone(splitString(string)[1]);
             }
@@ -178,7 +169,7 @@ public class ComToolbox {
 
     private static boolean isPass(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], PASS)) {
+            if (equalsKeyword(splitString(string)[0], PASS)) {
                 return (length(splitString(string)) == 1);
             }
         }
@@ -187,27 +178,27 @@ public class ComToolbox {
 
     private static boolean isPassed(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], PASSED)) {
-                return ((length(splitString(string)) == 1) &&
+            if (equalsKeyword(splitString(string)[0], PASSED)) {
+                return ((length(splitString(string)) == 2) &&
                         isStone(splitString(string)[1]));
             }
         }
         return false;
     }
 
-    private static boolean isTableflip(String string) {
+    private static boolean isTableFlip(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], TABLEFLIP)) {
+            if (equalsKeyword(splitString(string)[0], TABLEFLIP)) {
                 return (length(splitString(string)) == 1);
             }
         }
         return false;
     }
 
-    private static boolean isTableflipped(String string) {
+    private static boolean isTableFlipped(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], TABLEFLIPPED)) {
-                return ((length(splitString(string)) == 1) &&
+            if (equalsKeyword(splitString(string)[0], TABLEFLIPPED)) {
+                return ((length(splitString(string)) == 2) &&
                         isStone(splitString(string)[1]));
             }
         }
@@ -216,7 +207,7 @@ public class ComToolbox {
 
     private static boolean isChat(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], CHAT)) {
+            if (equalsKeyword(splitString(string)[0], CHAT)) {
                 return (length(splitString(string)) > 1);
             }
         }
@@ -225,7 +216,7 @@ public class ComToolbox {
 
     private static boolean isWarning(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], WARNING)) {
+            if (equalsKeyword(splitString(string)[0], WARNING)) {
                 return (length(splitString(string)) > 1);
             }
         }
@@ -234,10 +225,10 @@ public class ComToolbox {
 
     private static boolean isEnd(String string) {
         if (string.length() > 0) {
-            if (isKeyword(splitString(string)[0], CHAT)) {
-                return ((length(splitString(string)) == 1) &&
-                        isDouble(splitString(string)[1]) &&
-                        isDouble(splitString(string)[1]));
+            if (equalsKeyword(splitString(string)[0], END)) {
+                return ((length(splitString(string)) == 3) &&
+                        isInteger(splitString(string)[1]) &&
+                        isInteger(splitString(string)[2]));
             }
         }
         return false;
@@ -265,7 +256,7 @@ public class ComToolbox {
                 result = isPass(string);
                 break;
             case TABLEFLIP:
-                result = isTableflip(string);
+                result = isTableFlip(string);
                 break;
             case CHAT:
                 result = isChat(string);
@@ -286,7 +277,7 @@ public class ComToolbox {
                 result = isPassed(string);
                 break;
             case TABLEFLIPPED:
-                result = isTableflipped(string);
+                result = isTableFlipped(string);
                 break;
             case WARNING:
                 result = isWarning(string);
@@ -311,7 +302,7 @@ public class ComToolbox {
 //        if (isPass(string)) {
 //            return true;
 //        }
-//        if (isTableflip(string)) {
+//        if (isTableFlip(string)) {
 //            return true;
 //        }
 //        if (isChat(string)) {
@@ -336,7 +327,7 @@ public class ComToolbox {
 //        if (isPassed(string)) {
 //            return true;
 //        }
-//        if (isTableflipped(string)) {
+//        if (isTableFlipped(string)) {
 //            return true;
 //        }
 //        if (isChat(string)) {

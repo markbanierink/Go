@@ -1,6 +1,7 @@
 package server;
 
 import game.*;
+import helper.Stone;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,7 +27,9 @@ public class Server {
     private HashMap<Player, ClientHandler> playersList = new HashMap<>();
     private List<Game> gamesList = new ArrayList<>();
     private boolean serverLoop = true;
-    private boolean matchBoardsize = false;
+
+    private boolean matchBoardsize;
+    private int playersPerGame = 0;
 
     public static void main(String[] args) {
         new Server();
@@ -39,7 +42,8 @@ public class Server {
         printOutput("Starting Server");
         ServerSocket serverSocket = createServerSocket();
         printOutput("ServerSocket made");
-        matchBoardsize();
+        setMatchBoardsize();
+        setPlayersPerGame();
         Socket socket = null;
         while (serverLoop) {
             if (isClientHandlerAvailable()) {
@@ -69,7 +73,11 @@ public class Server {
         return this.matchBoardsize;
     }
 
-    private void matchBoardsize() {
+    private int getPlayersPerGame() {
+        return this.playersPerGame;
+    }
+
+    private void setMatchBoardsize() {
         boolean answered = false;
         while (!answered) {
             String matchString = getConsoleInput("Match players on board size (y/n): ");
@@ -81,6 +89,22 @@ public class Server {
                 answered = true;
             }
         }
+    }
+
+    private void setPlayersPerGame() {
+        while (getPlayersPerGame() == 0) {
+            String numberString = getConsoleInput("Number of players per game: ");
+            if (isInteger(numberString)) {
+                int number = Integer.parseInt(numberString);
+                if (number > 1 && number <= maxPlayersPerGame()) {
+                    this.playersPerGame = number;
+                }
+            }
+        }
+    }
+
+    private int maxPlayersPerGame() {
+        return Stone.values().length - 1;
     }
 
     private int getPortNumber() {
@@ -181,11 +205,11 @@ public class Server {
         printOutput("Game " + getGamesList().indexOf(game) + " removed");
     }
 
-    private void matchWithListedPlayer(Player player, int boardsize) {
+    private void matchWithListedPlayer(Player player, int boardSize) {
         boolean match = false;
         for (Game game : getGamesList()) {
-            if (game.getGamePlayers().size() == 1) {
-                if (getMatchBoardsize() && game.getBoard().getBoardsize() == boardsize) {
+            if (game.getPlayers().size() == 1 && game.getPlayers().size() < game.maxPlayers()) {
+                if (getMatchBoardsize() && game.getBoard().getBoardSize() == boardSize) {
                     match = true;
                 } else if (!getMatchBoardsize()) {
                     match = true;
@@ -200,7 +224,7 @@ public class Server {
                 return;
             }
         }
-        Game newGame = createGame(boardsize);
+        Game newGame = createGame(boardSize);
         newGame.addPlayer(player);
         printOutput("New Game " + gamesList.indexOf(newGame) + " added to list");
     }
@@ -221,7 +245,7 @@ public class Server {
     }
 
     private void broadcastGame(Game game, String message) {
-        for (Player player : game.getGamePlayers()) {
+        for (Player player : game.getPlayers()) {
             handleClientOutput(getClientHandler(player), message);
         }
     }
@@ -239,10 +263,10 @@ public class Server {
     }
 
     private void broadcastReadyCommand(Game game) {
-        for (Player player : game.getGamePlayers()) {
+        for (Player player : game.getPlayers()) {
             List<Player> opponents = game.getOpponents(player);
             if (opponents.size() == 1) {
-                String string = READY.toString() + SPACE + player.getStone().toString().toLowerCase() + SPACE + opponents.get(0).getName() + SPACE + game.getBoard().getBoardsize();
+                String string = READY.toString() + SPACE + player.getStone().toString().toLowerCase() + SPACE + opponents.get(0).getName() + SPACE + game.getBoard().getBoardSize();
                 handleClientOutput(getClientHandler(player), string);
             } else {
                 printOutput("Multiple opponents not yet implemented!");
@@ -266,7 +290,7 @@ public class Server {
 
     private Game getPlayerGame(Player player) {
         for (Game listedGame : getGamesList()) {
-            for (Player listedPlayer : listedGame.getGamePlayers()) {
+            for (Player listedPlayer : listedGame.getPlayers()) {
                 if (player.equals(listedPlayer)) {
                     return listedGame;
                 }
@@ -290,7 +314,7 @@ public class Server {
         } else {
             if (isValidCommand(CANCEL, string)) {
                 Game game = getPlayerGame(getPlayer(clientHandler));
-                if (game != null && (game.getGamePlayers().size() == 1)) {
+                if (game != null && (game.getPlayers().size() == 1)) {
                     commandCancel(clientHandler);
                 } else {
                     noCommand(clientHandler);
@@ -325,7 +349,7 @@ public class Server {
     private Game getGame(Player player) {
         Game game = null;
         for (Game listedGame : getGamesList()) {
-            for (Player listedPlayer : listedGame.getGamePlayers()) {
+            for (Player listedPlayer : listedGame.getPlayers()) {
                 if (listedPlayer.equals(player)) {
                     game = listedGame;
                 }
@@ -397,7 +421,7 @@ public class Server {
     }
 
     private void deleteGame(Game game) {
-        for (Player player : game.getGamePlayers()) {
+        for (Player player : game.getPlayers()) {
             deletePlayer(player);
         }
         removeListedGame(game);
@@ -408,7 +432,7 @@ public class Server {
         handleClientOutput(clientHandler, CHAT.toString() + SPACE + SERVER + ":" + SPACE + KICKED);
         if (isPlayer(clientHandler)) {
             Player player = getPlayer(clientHandler);
-            if (getGame(getPlayer(clientHandler)).getGamePlayers().size() == 0) {
+            if (getGame(getPlayer(clientHandler)).getPlayers().size() == 0) {
                                                                                                     // keep game if another player is still in it?
                 deleteGame(getGame(getPlayer(clientHandler)));
                                                                                                     // delete instance of game?
@@ -444,28 +468,5 @@ public class Server {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

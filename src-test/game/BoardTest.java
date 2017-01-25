@@ -1,8 +1,8 @@
 package game;
 
-import game.Board;
 import org.junit.jupiter.api.*;
 
+import static helper.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -10,21 +10,56 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class BoardTest {
 
-//    public final static int BOARDSIZE = 9;
-//    public Board board;
-//
-//    @BeforeEach
-//    public void setUp() {
-//        this.board = new Board(BOARDSIZE);
-//    }
-//
-//    @Test
-//    public void testSize() {
-//        assertEquals(board.getBoardsize(), BOARDSIZE);
-//    }
-//
-//    @Test
-//    public void test
+    private final static int BOARD_SIZE = 5;
+    private Board board1 = new Board(BOARD_SIZE);
+    private Board board2 = new Board(BOARD_SIZE);
+    private Board board3 = new Board(BOARD_SIZE);
+    private Board board4 = new Board(BOARD_SIZE + 1);
+    private Game game = new Game(BOARD_SIZE);
 
+    @BeforeEach
+    void setUp() {
+        board3.setField(0, 0, BLACK);
+    }
+
+    @Test
+    void testIsEmpty() {
+        assertTrue(board1.isEmpty(0, 0));
+        assertFalse(board3.isEmpty(0, 0));
+    }
+
+    @Test
+    void testIsField() {
+        assertTrue(board1.isField(0, 0));
+        assertFalse(board1.isField(BOARD_SIZE, BOARD_SIZE));
+        assertFalse(board1.isField(-1, -1));
+    }
+
+    @Test
+    void testGetBoardSize() {
+        assertEquals(BOARD_SIZE, board1.getBoardSize());
+    }
+
+    @Test
+    void testSetField() {
+        Board boardNew = board1.setField(0, 0, BLACK);
+        assertEquals(board3, boardNew);
+    }
+
+    @Test
+    void testBoardCopy() {
+        Board copy = board1.boardCopy();
+        assertEquals(board1, copy);
+    }
+
+    @Test
+    void testEquals() {
+        assertFalse(board1.equals(null));
+        assertTrue(board1.equals(board1));
+        assertFalse(board1.equals(game));
+        assertFalse(board1.equals(board4));
+        assertFalse(board1.equals(board3));
+        assertTrue(board1.equals(board2));
+    }
 
 }

@@ -15,6 +15,8 @@ import static helper.Strings.*;
 
 /**
  * Created by mark.banierink on 16-1-2017.
+ * The Client Class handles the client side of the game
+ * It is extended by a ComputerClient or HumanClient
  */
 public class Client {
 
@@ -23,7 +25,10 @@ public class Client {
     private Player player;
     private Game game;
 
-    public Client() {
+    /**
+     * The constructor can be called from the subclasses. No parameters or environmental variables are required
+     */
+    protected Client() {
         InetAddress inetAddress = getInetAddress();
         int port = getPortNumber();
         handleConsoleOutput("Connecting to socket");
@@ -41,7 +46,7 @@ public class Client {
         while (true) {
             String boardsizeString = getConsoleInput("Preferred board size (5 - 131, odd): ");
             if (isInteger(boardsizeString)) {
-                if (isBoardsize(Integer.parseInt(boardsizeString))) {
+                if (isBoardSize(Integer.parseInt(boardsizeString))) {
                     return Integer.parseInt(boardsizeString);
                 }
             }

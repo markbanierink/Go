@@ -10,24 +10,23 @@ import static helper.Stone.*;
  */
 public class Board {
 
-    private int size;
+    private int boardSize;
     private Stone[][] fields;
-    private String boardString;
 
     /**
      * The constructor of the board
-     * @param boardsize integer representing the board size
+     * @param boardSize integer representing the board size
      */
-    public Board(int boardsize) {
-        this.size = boardsize;
-        this.fields = new Stone[boardsize][boardsize];
+    public Board(int boardSize) {
+        this.boardSize = boardSize;
+        this.fields = new Stone[boardSize][boardSize];
         clearBoard();
     }
 
     private void clearBoard() {
-        for (int i = 0; i < getBoardsize(); i++) {
-            for (int j = 0; j < getBoardsize(); j++) {
-                emptyField(i, j);
+        for (int i = 0; i < getBoardSize(); i++) {
+            for (int j = 0; j < getBoardSize(); j++) {
+                setFieldEmpty(i, j);
             }
         }
     }
@@ -45,15 +44,15 @@ public class Board {
     }
 
     protected boolean isField(int x, int y) {
-        return ( (x >= 0 && x < getBoardsize()) && (y >= 0 && y < getBoardsize()) );
+        return ( (x >= 0 && x < getBoardSize()) && (y >= 0 && y < getBoardSize()) );
     }
 
     /**
      * returns the size of this board
      * @return integer with the board size
      */
-    public int getBoardsize() {
-        return this.size;
+    public int getBoardSize() {
+        return this.boardSize;
     }
 
     protected Board setField(int x, int y, Stone stone) {
@@ -63,30 +62,51 @@ public class Board {
         return this;
     }
 
-    private void emptyField(int x, int y) {
+    private void setFieldEmpty(int x, int y) {
         if (!isEmpty(x, y)) {
             setField(x, y, EMPTY);
         }
     }
 
     protected Board boardCopy() {
-        Board newBoard = new Board(getBoardsize());
-        for (int i = 0; i < getBoardsize(); i++) {
-            for (int j = 0; j < getBoardsize(); j++) {
-                newBoard.setField(i, j, getField(i, j));
+        Board newBoard = new Board(getBoardSize());
+        for (int i = 0; i < getBoardSize(); i++) {
+            for (int j = 0; j < getBoardSize(); j++) {
+                newBoard.setField(i, j, this.getField(i, j));
             }
         }
         return newBoard;
     }
 
-    protected String boardToString() {
-        String boardString = "";
-        for (int i = 0; i < this.getBoardsize(); i++) {
-            for (int j = 0; j < this.getBoardsize(); j++) {
-                boardString += getField(i, j);
-            }
+    /**
+     * This method compares two board instances. It overrides the original equals method
+     * @param object The Board object that it compares this object with
+     * @return True if both Board instances contain the same occupation, False if not
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (object == null) {
+            return false;
         }
-        return boardString;
+        if (object == this) {
+            return true;
+        }
+        if (!(object instanceof Board)) {
+            return false;
+        }
+        Board board = (Board)object;
+        if (this.getBoardSize() != board.getBoardSize()) {
+            return false;
+        } else {
+            for (int i = 0; i < this.getBoardSize(); i++) {
+                for (int j = 0; j < this.getBoardSize(); j++) {
+                    if (!this.getField(i, j).equals(board.getField(i, j))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
     }
 
 }

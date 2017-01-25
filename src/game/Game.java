@@ -16,31 +16,32 @@ import static helper.Strings.*;
  */
 public class Game {
 
-    private List<Player> gamePlayers = new ArrayList<>();
+    private List<Player> players = new ArrayList<>();
     private Board board;
     private Stone turn = BLACK;
     private int turnCounter = 1;
-    private int movesPerTurn = 1;
     private int passCounter = 0;
     private List<Board> boardHistory = new ArrayList<>();
     private GoGUIIntegrator goGui;
 
+    private int movesPerTurn = 1;
+
     /**
-     * Constructor of the game
-     * @param boardsize the size of the board on which the game is to be played
+     * Constructor of the game. Calls copyBoard(getBoard()).
+     * @param boardSize the size of the board on which the game is to be played
      */
-    public Game(int boardsize) {
-        this.board = new Board(boardsize);
+    public Game(int boardSize) {
+        this.board = new Board(boardSize);
         copyBoard(getBoard());
     }
 
     /**
-     * Starts the game by assigning stones to players and starting the GUI
-     * 2 players must have been added to the gamePlayers List
+     * Starts the game by assigning stones to players (assignStones()) and starting the GUI
+     * 2 players must have been added to the players List
      */
     public void startGame() {
         assignStones();
-        goGui = new GoGUIIntegrator(true, true, getBoard().getBoardsize());
+        goGui = new GoGUIIntegrator(true, true, getBoard().getBoardSize());
         getGui().startGUI();
     }
 
@@ -51,7 +52,7 @@ public class Game {
      */
     public List<Player> getOpponents(Player player) {
         List<Player> opponents = new ArrayList<>();
-        for (Player listedPlayer : getGamePlayers()) {
+        for (Player listedPlayer : getPlayers()) {
             if (!listedPlayer.equals(player)) {
                 opponents.add(listedPlayer);
             }
@@ -91,8 +92,20 @@ public class Game {
      * returns the list of Players
      * @return List with Player objects
      */
-    public List<Player> getGamePlayers() {
-        return this.gamePlayers;
+    public List<Player> getPlayers() {
+        return this.players;
+    }
+
+    /**
+     * Determines the maximum amount of players, based on the amount of available stones
+     * @return int with the max amount of players
+     */
+    public int maxPlayers() {
+        return Stone.values().length - 1;
+    }
+
+    private int numPlayers() {
+        return getPlayers().size();
     }
 
     private GoGUIIntegrator getGui() {
@@ -112,7 +125,7 @@ public class Game {
      * @param player Player object to add
      */
     public void addPlayer(Player player) {
-        this.gamePlayers.add(player);
+        this.players.add(player);
     }
 
     /**
@@ -120,7 +133,7 @@ public class Game {
      * @param player The Player that is removed
      */
     public void removePlayer(Player player) {
-        this.gamePlayers.remove(player);
+        this.players.remove(player);
     }
 
     /**
@@ -129,7 +142,7 @@ public class Game {
      * @return Player object to which the Stone is assigned, null if none was found
      */
     public Player getPlayerByStone(Stone stone) {
-        for (Player listedPlayer : getGamePlayers()) {
+        for (Player listedPlayer : getPlayers()) {
             if (listedPlayer.getStone() == stone) {
                 return listedPlayer;
             }
@@ -138,16 +151,21 @@ public class Game {
     }
 
     private void nextTurn() {
+        copyBoard(getBoard());
         if (getTurnNumber() % movesPerTurn == 0) {
-            this.turn = getTurn().other();
+            this.turn = getTurn().nextStone(numPlayers());
         }
         turnCounter++;
     }
 
     private void assignStones() {
-        Stone stone = randomStone();
-        gamePlayers.get(0).setStone(stone);
-        gamePlayers.get(1).setStone(stone.other());
+        for (Player player : getPlayers()) {
+            Stone stone = randomStone(numPlayers());
+            while (getPlayerByStone(stone) != null) {           // possible perpetual loop, needs improvement
+                stone = randomStone(numPlayers());
+            }
+            player.setStone(stone);
+        }
     }
 
     private void placeStone(int x, int y, Stone stone) {
@@ -160,15 +178,14 @@ public class Game {
      * @return String with the end score if the game is over after this turn, empty string if not
      */
     public String pass() {
-        if (getTurn() == BLACK) {
-            increasePassCounter();
-            nextTurn();
-        } else if (passCounter == 1){
-            increasePassCounter();
+        if (getTurn() == Stone.values()[1]) {
+            resetPassCounter();
         }
+        increasePassCounter();
         if (isFinished()) {
-            return END.toString() + SPACE + getScore(BLACK) + SPACE + getScore(WHITE);
+            return END + scoreString();
         }
+        nextTurn();
         return "";
     }
 
@@ -179,8 +196,16 @@ public class Game {
                                                                 // wat moet er nu gebeuren?
     }
 
+    private String scoreString() {
+        String scoreString = "";
+        for (Player player : getPlayers()) {
+            scoreString += SPACE.toString() + player.getStone() + SPACE + getScore(player.getStone());
+        }
+        return scoreString;
+    }
+
     private boolean isFinished() {
-        return getPassCounter() == 2;
+        return getPassCounter() == numPlayers();
     }
 
     private void increasePassCounter() {
@@ -196,7 +221,6 @@ public class Game {
     }
 
     private int getScore(Stone stone) {
-
         return 0;
     }
 
@@ -208,7 +232,6 @@ public class Game {
      */
     public void move(Stone stone, int x, int y) {
         placeStone(x, y, stone);
-        copyBoard(getBoard());
         resetPassCounter();
         nextTurn();
         getGui().addStone(x, y, stone2bool(stone));
@@ -259,7 +282,7 @@ public class Game {
 
     private boolean boardExists(Board board) {
         for (Board historicBoard : getBoardHistory()) {
-            if (board.boardToString().equals(historicBoard.boardToString())) {
+            if (board.equals(historicBoard)) {
                 return true;
             }
         }
