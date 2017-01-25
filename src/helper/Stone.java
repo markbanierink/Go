@@ -12,12 +12,13 @@ public enum Stone {
 
     /**
      * Method to get the Stone of the opponent
-     * @return Enum of the next stone in the Enum list, EMPTY if the current stone cannot be found
+     * @param numPlayers int to know when to go to the first
+     * @return Enum of the next stone in the Enum list, EMPTY if the current stone is out of range numPlayers
+     * or Null if no match is found
      */
     public Stone nextStone(int numPlayers) {
         int i = 0;
-        Stone[] stones = Stone.values();
-        for (Stone stone : stones) {
+        for (Stone stone : Stone.values()) {
             if (this == stone) {
                 if (i == numPlayers) {
                     i = 0;
@@ -28,11 +29,12 @@ public enum Stone {
             }
             i++;
         }
-        return EMPTY;
+        return null;
     }
 
     /**
      * Random generator to choose a random stone
+     * @param numPlayers int as a limit of the Stones to choose from
      * @return Stone Enum, but never the first element (EMPTY)
      */
     public static Stone randomStone(int numPlayers) {
