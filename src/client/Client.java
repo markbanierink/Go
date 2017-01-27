@@ -12,13 +12,11 @@ import java.net.UnknownHostException;
 import static helper.ComToolbox.*;
 import static helper.ConsoleToolbox.*;
 import static helper.enums.Keyword.*;
-import static helper.enums.Stone.*;
 import static helper.enums.Strings.*;
 
 /**
  * The Client Class handles the client side of the game
  * It is extended by a ComputerClient or HumanClient
- *
  * @author Mark Banierink
  */
 public class Client implements ServerClientInterface {
@@ -94,7 +92,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void startNewGame() {
-        if (requestBooleanInput(consoleReader, "Do you want to start a game", null)) {
+        if (requestBooleanInput(consoleReader, "Do you want to start a new game", "y")) {
             handleServerInput(createCommandGo(requestBoardSize()));
         }
         else {
@@ -114,10 +112,9 @@ public class Client implements ServerClientInterface {
     }
 
     private InetAddress getInetAddress() {
-        String inetAddressString = requestStringInput(consoleReader, "Enter the IP address", "localhost");
         InetAddress inetAddress = null;
         try {
-            inetAddress = InetAddress.getByName(inetAddressString);
+            inetAddress = InetAddress.getByName(requestStringInput(consoleReader, "Enter the IP address", "localhost"));
         }
         catch (UnknownHostException e) {
             printOutput("No Internet Address");
@@ -141,28 +138,28 @@ public class Client implements ServerClientInterface {
             commandWaiting(string);
         }
         else if (isReadyCommand(string)) {
-            commandReady(string);
+            commandReady(readyArguments(string));
         }
         else if (isValidCommand(string)) {
-            commandValid(string);
+            commandValid(validArguments(string));
         }
         else if (isInvalidCommand(string)) {
-            commandInvalid(string);
+            commandInvalid(invalidArguments(string));
         }
         else if (isPassedCommand(string)) {
-            commandPassed(string);
+            commandPassed(passedArguments(string));
         }
         else if (isTableFlippedCommand(string)) {
-            commandTableFlipped(string);
+            commandTableFlipped(tableFlippedArguments(string));
         }
         else if (isChatCommand(string)) {
-            commandChat(string);
+            commandChat(chatArguments(string));
         }
         else if (isWarningCommand(string)) {
-            commandWarning(string);
+            commandWarning(warningArguments(string));
         }
         else if (isEndCommand(string)) {
-            commandEnd(string);
+            commandEnd(endArguments(string));
         }
         else {
             noCommand(string);
@@ -173,90 +170,84 @@ public class Client implements ServerClientInterface {
         printOutput(WAITING_FOR_OPPONENT.toString());
     }
 
-    private void commandReady(String string) {
-        String[] split = splitString(string);
-        createGame(Integer.parseInt(split[0]), DEFAULT_MOVES_PER_TURN);
-        for (int i = 1; i < split.length; i +=2) {
-            Player player = new Player(split[i+1]);
-            player.setStone(Stone.valueOf(split[i]));
+    private void commandReady(String[] arguments) {
+        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN);
+        for (int i = 2; i < arguments.length; i += 2) {
+            Player player = new Player(arguments[i + 1]);
+            player.setStone(Stone.valueOf(arguments[i].toUpperCase()));
             getGame().addPlayer(player);
         }
     }
 
-    private void commandValid(String arguments) {
-        String[] split = splitString(arguments);
-        String response = getGame().checkMoveValidity(Stone.valueOf(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
+    private void commandValid(String[] arguments) {
+        String response = getGame().checkMoveValidity(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
         if (response.equals(VALID.toString())) {
-            getGame().move(Stone.valueOf(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
-            handleConsoleInput("Move by " + getGame().getPlayerByStone(Stone.valueOf(split[0])).getName() + ": " + split[1] + ", " + split[2]);
+            getGame().move(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
+            printOutput("Move by " + getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + ": " + arguments[2] + ", " + arguments[3]);
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH.toString());
         }
     }
 
-    private void commandInvalid(String string) {
-        String[] split = splitString(string);
-        Player opponent = getGame().getPlayerByStone(Stone.valueOf(split[1]));
-        printOutput("Invalid move by " + opponent.getName() + ": " + split[2]);
+    private void commandInvalid(String[] arguments) {
+        Player opponent = getGame().getPlayerByStone(Stone.valueOf(arguments[1]));
+        printOutput("Invalid move by " + opponent.getName() + ": " + arguments[2]);
     }
 
-    private void commandPassed(String string) {
-        String[] split = splitString(string);
-        if (getGame().isValidPass(Stone.valueOf(split[1]))) {
+    private void commandPassed(String[] arguments) {
+        if (getGame().isValidPass(Stone.valueOf(arguments[1]))) {
             getGame().pass();
-            printOutput(getGame().getPlayerByStone(Stone.valueOf(split[1])).getName() + " passed");
+            printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH.toString());
         }
     }
 
-    private void commandTableFlipped(String string) {
-        String[] split = splitString(string);
-        if (getGame().isValidTableflip(Stone.valueOf(split[1]))) {
-            getGame().tableflip();
-            printOutput(getGame().getPlayerByStone(Stone.valueOf(split[1])).getName() + " tableflipped");
+    private void commandTableFlipped(String[] arguments) {
+        if (getGame().isValidTableflip(Stone.valueOf(arguments[1]))) {
+            getGame().tableFlip();
+            printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " tableflipped");
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH.toString());
         }
     }
 
-    private void commandChat(String string) {
-        String message = string.substring(CHAT.toString().length());
-        printOutput("Chat message: " + message);
+    private void commandChat(String[] arguments) {
+        printOutput("Chat message: " + arguments[1]);
     }
 
-    private void commandWarning(String string) {
-        String message = string.substring(WARNING.toString().length());
-        printOutput("Warning: " + message);
+    private void commandWarning(String[] arguments) {
+        printOutput("Warning: " + arguments[1]);
     }
 
-    private void commandEnd(String string) {
-        String[] split = splitString(string);
-        Stone winner = null;
-        if (Integer.parseInt(split[1]) > Integer.parseInt(split[1])) {
-            winner = BLACK;
+    private void commandEnd(String[] arguments) {
+        int max = 1;
+        String result;
+        for (int i = 2; i < arguments.length; i++) {
+            if (Integer.parseInt(arguments[i]) >= Integer.parseInt(arguments[max])) {
+                max = Integer.parseInt(arguments[i]);
+            }
         }
-        else if (Integer.parseInt(split[1]) > Integer.parseInt(split[1])) {
-            winner = WHITE;
-        }
-        if (winner == null) {
-            printOutput("The game ended with a draw");
-        }
-        else if (getPlayer().getStone() == winner) {
-            printOutput("You won with " + split[1] + " to " + split[2] + "!");
+        if (Stone.values()[max].equals(getPlayer().getStone())) {
+            result = "the winner";
         }
         else {
-            printOutput("You lost with " + split[1] + " to " + split[2]);
+            result = "a loser";
         }
+        String outputMessage = "You are " + result + " with " + arguments[1];
+        for (int j = 2; j < arguments.length; j++) {
+            outputMessage += " to " + arguments[j];
+        }
+        printOutput(outputMessage);
         startNewGame();
     }
 
     private void noCommand(String string) {
         System.out.println("Client warning");
-        printOutput(WARNING.toString() + SPACE + UNKNOWN_KEYWORD);
+        printOutput(WARNING.toString() + SPACE + UNKNOWN_KEYWORD + SPACE + ": " + string);
     }
 
     public void handleConsoleInput(String string) {
@@ -300,18 +291,16 @@ public class Client implements ServerClientInterface {
         System.out.println(string);
     }
 
-
-//    private String getConsoleInput(String question) {
-//        System.out.print(question);
-//        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-//        String consoleInput = "";
-//        try {
-//            consoleInput = bufferedReader.readLine();
-//        }
-//        catch (IOException e) {
-//            printOutput(e.getMessage());
-//        }
-//        return consoleInput;
-//    }
-
+    //    private String getConsoleInput(String question) {
+    //        System.out.print(question);
+    //        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+    //        String consoleInput = "";
+    //        try {
+    //            consoleInput = bufferedReader.readLine();
+    //        }
+    //        catch (IOException e) {
+    //            printOutput(e.getMessage());
+    //        }
+    //        return consoleInput;
+    //    }
 }

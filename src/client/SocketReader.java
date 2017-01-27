@@ -29,8 +29,8 @@ public class SocketReader implements Runnable {
         String line;
         try {
             while ((line = serverOutput.readLine()) != null) {
+                System.out.println(line);                                                                           // TEMPORARY!!!
                 client.handleServerOutput(line);
-                System.out.println(line);
             }
             shutDown();
         }

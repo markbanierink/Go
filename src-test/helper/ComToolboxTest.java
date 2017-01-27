@@ -2,6 +2,8 @@ package helper;
 
 import game.Player;
 import helper.enums.Stone;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.*;
 
 import static helper.ComToolbox.*;
@@ -48,7 +50,7 @@ class ComToolboxTest {
     private String[] splitString2 = {"WHITE"};
     private int[] scores = {INT8, INT9};
     private Stone[] stones = {STONE1, STONE2};
-    private Player[] players = {newPlayer1, newPlayer2};
+    private List<Player> players = new ArrayList<>();
 
     private String commandPlayer;
     private String commandGo;
@@ -70,6 +72,8 @@ class ComToolboxTest {
     void setUp() {
         this.newPlayer1 = new Player(NAME1);
         this.newPlayer2 = new Player(NAME2);
+        players.add(newPlayer1);
+        players.add(newPlayer2);
 
         commandPlayer = createCommandPlayer(newPlayer1);
         commandGo = createCommandGo(INT9);

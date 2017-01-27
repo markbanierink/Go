@@ -15,7 +15,7 @@ import static helper.enums.Keyword.*;
 import static helper.enums.Strings.*;
 
 /**
- * This class handles the server-side of the game.
+ * This class handles the server-side of the game
  * No arguments are required.
  * @author Mark Banierink
  */
@@ -166,7 +166,7 @@ public class Server implements ServerClientInterface {
         return player;
     }
 
-    private boolean isPlayer(ClientHandler clientHandler) {
+    private boolean hasPlayer(ClientHandler clientHandler) {
         return getPlayer(clientHandler) != null;
     }
 
@@ -178,6 +178,13 @@ public class Server implements ServerClientInterface {
         Date date = new Date();
         getClientHandlers().put(clientHandler, date);
         printOutput("ClientHandler listed on " + date.toString());
+    }
+
+    protected void removeClientHandler(ClientHandler clientHandler) {
+        if (hasPlayer(clientHandler)) {
+            removePlayer(getPlayer(clientHandler));
+        }
+        removeListedClientHandler(clientHandler);
     }
 
     private synchronized void removeListedClientHandler(ClientHandler clientHandler) {
@@ -203,13 +210,21 @@ public class Server implements ServerClientInterface {
         return this.gamesList;
     }
 
-    private void addPlayer(Game game, Player player) {
+    private void addGamePlayer(Game game, Player player) {
         game.addPlayer(player);
         printOutput("Player added to Game " + getGameNumber(game));
+        broadcastPlayer(player, WAITING.toString());
         checkGameToStart(game);
     }
 
-    private void removePlayer(Game game, Player player) {
+    private void removePlayer(Player player) {
+        if (hasGame(player)) {
+            removeGamePlayer(getGame(player), player);
+        }
+        removeListedPlayer(player);
+    }
+
+    private void removeGamePlayer(Game game, Player player) {
         game.removePlayer(player);
         printOutput("Player removed from Game " + getGameNumber(game));
         if (isEmptyGame(game)) {
@@ -279,7 +294,7 @@ public class Server implements ServerClientInterface {
     private void deleteGame(Game game) {
         broadcastGame(game, "This game is removed", null);
         for (Player player : game.getPlayers()) {
-            removePlayer(game, player);
+            removeGamePlayer(game, player);
         }
         removeListedGame(game);
     }
@@ -308,47 +323,50 @@ public class Server implements ServerClientInterface {
         }
     }
 
-    private void broadcastClients(String string) {
+    private void broadcastClients(String string, ClientHandler excludedClientHandler) {
         for (ClientHandler clientHandler : getClientHandlers().keySet()) {
-            broadcastClient(clientHandler, string);
+            if (!clientHandler.equals(excludedClientHandler)) {
+                broadcastClient(clientHandler, string);
+            }
         }
     }
 
     private String readyMessage(Game game) {
-        String readyString = READY.toString() + SPACE + game.getBoard().getBoardSize();
+        int i = 0;
+        Stone[] stones = new Stone[game.getPlayers().size()];
         for (Player player : game.getPlayers()) {
-            readyString += SPACE + player.getStone().toString().toLowerCase() + SPACE + player.getName();
+            stones[i] = player.getStone();
+            i++;
         }
-        return readyString;
+        return createCommandReady(game.getBoard().getBoardSize(), stones, game.getPlayers());
     }
 
     private Player createPlayer(ClientHandler clientHandler, String string) {
         String[] split = splitString(string);
         Player player = new Player(split[0]);
         listPlayer(player, clientHandler);
-        handleClientOutput(clientHandler, WAITING.toString());
         printOutput("New player: " + split[0]);
         return player;
     }
 
     protected void handleClientInput(ClientHandler clientHandler, String string) {
         String name = "[New Client]";
-        if (isPlayer(clientHandler)) {
+        if (hasPlayer(clientHandler)) {
             name = getPlayer(clientHandler).getName();
         }
         printOutput(name + ": " + string);
-        if (isPlayerCommand(string) && !isPlayer(clientHandler)) {
-            if (!playerNameExists(playerCommandArguments(string))) {
-                commandPlayer(clientHandler, playerCommandArguments(string));
+        if (isPlayerCommand(string) && !hasPlayer(clientHandler)) {
+            if (!playerNameExists(playerArguments(string)[1])) {
+                commandPlayer(clientHandler, playerArguments(string));
             }
             else {
-                broadcastClient(clientHandler, NAME_TAKEN.toString());
+                broadcastClient(clientHandler, createCommandWarning(NAME_TAKEN.toString()));
             }
         }
-        else if (isPlayer(clientHandler)) {
+        else if (hasPlayer(clientHandler)) {
             Player player = getPlayer(clientHandler);
             if (isGoCommand(string) && !hasGame(player)) {
-                commandGo(player, goCommandArguments(string));
+                commandGo(player, goArguments(string));
             }
             else if (hasGame(player)) {
                 Game game = getGame(player);
@@ -361,7 +379,7 @@ public class Server implements ServerClientInterface {
                     }
                 }
                 else if (isMoveCommand(string)) {
-                    commandMove(game, player, moveCommandArguments(string));
+                    commandMove(game, player, moveArguments(string));
                 }
                 else if (isPassCommand(string)) {
                     commandPass(game, player);
@@ -378,7 +396,7 @@ public class Server implements ServerClientInterface {
             }
         }
         else if (isChatCommand(string)) {
-            commandChat(clientHandler, chatCommandArguments(string));
+            commandChat(clientHandler, chatArguments(string));
         }
         else {
             noCommand(clientHandler);
@@ -394,25 +412,25 @@ public class Server implements ServerClientInterface {
         return false;
     }
 
-    private void commandPlayer(ClientHandler clientHandler, String string) {
-        createPlayer(clientHandler, splitString(string)[0]);
+    private void commandPlayer(ClientHandler clientHandler, String[] arguments) {
+        createPlayer(clientHandler, arguments[1]);
     }
 
-    private void commandGo(Player player, int boardSize) {
+    private void commandGo(Player player, String[] arguments) {
+        int boardSize = Integer.parseInt(arguments[1]);
         if (isGameAvailable(boardSize)) {
             Game game = availableGame(boardSize);
-            addPlayer(game, player);
-
+            addGamePlayer(game, player);
         }
         else {
             Game newGame = createGame(boardSize);
-            newGame.addPlayer(player);
+            addGamePlayer(newGame, player);
             printOutput("Player added to Game " + getGameNumber(newGame));
         }
     }
 
     private void commandCancel(Game game, Player player) {
-        removePlayer(game, player);
+        removeGamePlayer(game, player);
     }
 
     private boolean hasGame(Player player) {
@@ -430,9 +448,9 @@ public class Server implements ServerClientInterface {
         return null;
     }
 
-    private void commandMove(Game game, Player player, String string) {
-        int x = Integer.parseInt(splitString(string)[0]);
-        int y = Integer.parseInt(splitString(string)[1]);
+    private void commandMove(Game game, Player player, String[] arguments) {
+        int x = Integer.parseInt(arguments[1]);
+        int y = Integer.parseInt(arguments[2]);
         String response = game.checkMoveValidity(player.getStone(), x, y);
         if (game.isValidMove(player.getStone(), x, y)) {
             game.move(player.getStone(), x, y);
@@ -459,19 +477,19 @@ public class Server implements ServerClientInterface {
     private void commandTableFlip(Game game, Player player) {
         if (game.isValidTableflip(player.getStone())) {
             broadcastGame(game, createCommandTableFlipped(player.getStone()), null);
-            game.tableflip();
+            game.tableFlip();
         }
     }
 
-    private void commandChat(ClientHandler clientHandler, String message) {
+    private void commandChat(ClientHandler clientHandler, String[] arguments) {
         Player player = getPlayer(clientHandler);
         String sender = player.getName();
         if (hasGame(getPlayer(clientHandler))) {
             Game game = getGame(getPlayer(clientHandler));
-            broadcastGame(game, createCommandChat(sender, message), player);
+            broadcastGame(game, createCommandChat(sender, arguments[1]), player);
         }
         else {
-            broadcastPlayers(createCommandChat(sender, message), player);
+            broadcastPlayers(createCommandChat(sender, arguments[1]), player);
         }
     }
 
@@ -482,16 +500,12 @@ public class Server implements ServerClientInterface {
     private void kickClient(ClientHandler clientHandler, String reason) {
         handleClientOutput(clientHandler, reason);
         handleClientOutput(clientHandler, CHAT.toString() + SPACE + SERVER + ":" + SPACE + KICKED);
-        if (isPlayer(clientHandler)) {
-            Player player = getPlayer(clientHandler);
-            if (hasGame(player)) {
-                Game game = getGame(player);
-                broadcastGame(game, player.getName() + SPACE + IS_KICKED, player);
-                removePlayer(game, player);
-            }
-            removeListedPlayer(player);
+        String name = "Anonymous Client";
+        if (hasPlayer(clientHandler)) {
+            name = getPlayer(clientHandler).getName();
         }
-        removeListedClientHandler(clientHandler);
+        broadcastClients(name + SPACE + IS_KICKED, clientHandler);
+        removeClientHandler(clientHandler);
         clientHandler.shutDown();
     }
 
@@ -512,7 +526,7 @@ public class Server implements ServerClientInterface {
     }
 
     private void shutDown(Socket socket, ServerSocket serverSocket, String broadcastMessage) {
-        broadcastClients(broadcastMessage);
+        broadcastClients(broadcastMessage, null);
         try {
             socket.close();
             serverSocket.close();

@@ -3,6 +3,7 @@ package helper;
 import game.Player;
 import helper.enums.Keyword;
 import helper.enums.Stone;
+import java.util.List;
 
 import static helper.enums.Keyword.*;
 import static helper.enums.Strings.*;
@@ -150,10 +151,10 @@ public class ComToolbox {
      * @param players contains the names of the players
      * @return String that can be used as a commando for the server
      */
-    public static String createCommandReady(int boardSize, Stone[] stones, Player[] players) {
+    public static String createCommandReady(int boardSize, Stone[] stones, List<Player> players) {
         String result = READY.toString() + SPACE + boardSize;
         for (int i = 0; i < stones.length; i++) {
-            result += SPACE.toString() + stones[i].toString().toLowerCase() + SPACE + players[i].getName();
+            result += SPACE.toString() + stones[i].toString().toLowerCase() + SPACE + players.get(i).getName();
         }
         return result;
     }
@@ -225,7 +226,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isPlayerCommand(String string) {
-        return playerCommandArguments(string) != null;
+        return playerArguments(string) != null;
     }
 
     /**
@@ -233,10 +234,10 @@ public class ComToolbox {
      * @param string to be checked
      * @return String containing the Player's name, or else null
      */
-    public static String playerCommandArguments(String string) {
+    public static String[] playerArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 2 && equalsKeyword(split[0], PLAYER)) {
-            return splitString(string)[1];
+            return split;
         }
         return null;
     }
@@ -247,7 +248,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isGoCommand(String string) {
-        return goCommandArguments(string) != -1;
+        return goArguments(string) != null;
     }
 
     /**
@@ -255,12 +256,12 @@ public class ComToolbox {
      * @param string to be checked
      * @return int containing the Player's requested board size, or else -1
      */
-    public static int goCommandArguments(String string) {
+    public static String[] goArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 2 && equalsKeyword(split[0], GO) && isInteger(split[1])) {
-            return Integer.parseInt(splitString(string)[1]);
+            return split;
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -269,7 +270,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isWaitingCommand(String string) {
-        return waitingCommandArguments(string);
+        return waitingArguments(string) != null;
     }
 
     /**
@@ -277,9 +278,12 @@ public class ComToolbox {
      * @param string to be checked
      * @return true if it is WAITING
      */
-    public static boolean waitingCommandArguments(String string) {
+    public static String[] waitingArguments(String string) {
         String[] split = splitString(string);
-        return split.length == 1 && (equalsKeyword(split[0], WAITING));
+        if(split.length == 1 && (equalsKeyword(split[0], WAITING))) {
+            return split;
+        }
+        return null;
     }
 
     /**
@@ -288,7 +292,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isCancelCommand(String string) {
-        return cancelCommandArguments(string);
+        return cancelArguments(string) != null;
     }
 
     /**
@@ -296,9 +300,12 @@ public class ComToolbox {
      * @param string to be checked
      * @return true if it is CANCEL
      */
-    public static boolean cancelCommandArguments(String string) {
+    public static String[] cancelArguments(String string) {
         String[] split = splitString(string);
-        return split.length == 1 && equalsKeyword(split[0], CANCEL);
+        if (split.length == 1 && equalsKeyword(split[0], CANCEL)) {
+            return split;
+        }
+        return null;
     }
 
     /**
@@ -307,7 +314,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isReadyCommand(String string) {
-        return readyCommandArguments(string) != null;
+        return readyArguments(string) != null;
     }
 
     /**
@@ -315,13 +322,14 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the READY command
      */
-    public static String readyCommandArguments(String string) {
-        String result = null;
+    public static String[] readyArguments(String string) {
+        String[] result = null;
         String[] split = splitString(string);
         if (split.length >= 6 && !isOdd(split.length) && equalsKeyword(split[0], READY) && isInteger(split[1])) {
             for (int i = 2; i < split.length; i += 2) {
                 if (isStone(split[i])) {
-                    result = string.substring(READY.toString().length());
+                    split[i] = split[i].toUpperCase();
+                    result = split;
                 }
                 else {
                     result = null;
@@ -338,7 +346,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isMoveCommand(String string) {
-        return moveCommandArguments(string) != null;
+        return moveArguments(string) != null;
     }
 
     /**
@@ -346,10 +354,10 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the MOVE command
      */
-    public static String moveCommandArguments(String string) {
+    public static String[] moveArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 3 && equalsKeyword(split[0], MOVE) && isInteger(split[1]) && isInteger(split[2])) {
-            return string.substring(MOVE.toString().length() + 1);
+            return split;
         }
         return null;
     }
@@ -360,7 +368,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isValidCommand(String string) {
-        return validCommandArguments(string) != null;
+        return validArguments(string) != null;
     }
 
     /**
@@ -368,10 +376,10 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the VALID command
      */
-    public static String validCommandArguments(String string) {
+    public static String[] validArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 4 && equalsKeyword(split[0], VALID) && isStone(split[1]) && isInteger(split[2]) && isInteger(split[3])) {
-            return string.substring(VALID.toString().length());
+            return split;
         }
         return null;
     }
@@ -382,7 +390,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isInvalidCommand(String string) {
-        return invalidCommandArguments(string) != null;
+        return invalidArguments(string) != null;
     }
 
     /**
@@ -390,10 +398,10 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the INVALID command
      */
-    public static String invalidCommandArguments(String string) {
+    public static String[] invalidArguments(String string) {
         String[] split = splitString(string);
         if (split.length >= 2 && equalsKeyword(split[0], INVALID) && isStone(split[1])) {
-            return string.substring(INVALID.toString().length());
+            return split;
         }
         return null;
     }
@@ -404,7 +412,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isPassCommand(String string) {
-        return passCommandArguments(string);
+        return passArguments(string) != null;
     }
 
     /**
@@ -412,9 +420,12 @@ public class ComToolbox {
      * @param string to be checked
      * @return true if it is PASS
      */
-    public static boolean passCommandArguments(String string) {
+    public static String[] passArguments(String string) {
         String[] split = splitString(string);
-        return split.length == 1 && equalsKeyword(split[0], PASS);
+        if (split.length == 1 && equalsKeyword(split[0], PASS)) {
+            return split;
+        }
+        return null;
     }
 
     /**
@@ -423,7 +434,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isPassedCommand(String string) {
-        return passedCommandArguments(string) != null;
+        return passedArguments(string) != null;
     }
 
     /**
@@ -431,10 +442,11 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the PASSED command
      */
-    public static Stone passedCommandArguments(String string) {
+    public static String[] passedArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 2 && equalsKeyword(split[0], PASSED) && isStone(split[1])) {
-            return Stone.valueOf(split[1].toUpperCase());
+            split[1] = split[1].toUpperCase();
+            return split;
         }
         return null;
     }
@@ -445,7 +457,7 @@ public class ComToolbox {
      * @return true if valid
      */
     public static boolean isTableFlipCommand(String string) {
-        return tableFlipCommandArguments(string);
+        return tableFlipArguments(string) != null;
     }
 
     /**
@@ -453,9 +465,12 @@ public class ComToolbox {
      * @param string to be checked
      * @return true if it is TABLEFLIP
      */
-    public static boolean tableFlipCommandArguments(String string) {
+    public static String[] tableFlipArguments(String string) {
         String[] split = splitString(string);
-        return split.length == 1 && equalsKeyword(split[0], TABLEFLIP);
+        if (split.length == 1 && equalsKeyword(split[0], TABLEFLIP)) {
+            return split;
+        }
+        return null;
     }
 
     /**
@@ -464,7 +479,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isTableFlippedCommand(String string) {
-        return tableFlippedCommandArguments(string) != null;
+        return tableFlippedArguments(string) != null;
     }
 
     /**
@@ -472,10 +487,11 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the PASSED command
      */
-    public static Stone tableFlippedCommandArguments(String string) {
+    public static String[] tableFlippedArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 2 && equalsKeyword(split[0], TABLEFLIPPED) && isStone(split[1])) {
-            return Stone.valueOf(split[1].toUpperCase());
+            split[1] = split[1].toUpperCase();
+            return split;
         }
         return null;
     }
@@ -486,7 +502,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isChatCommand(String string) {
-        return chatCommandArguments(string) != null;
+        return chatArguments(string) != null;
     }
 
     /**
@@ -494,10 +510,13 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the CHAT command
      */
-    public static String chatCommandArguments(String string) {
+    public static String[] chatArguments(String string) {
         String[] split = splitString(string);
         if (split.length >= 2 && equalsKeyword(split[0], CHAT)) {
-            return string.substring(CHAT.toString().length());
+            String[] newSplit = new String[2];
+            newSplit[0] = CHAT.toString();
+            newSplit[1] = string.substring(CHAT.toString().length());
+            return newSplit;
         }
         return null;
     }
@@ -508,7 +527,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isWarningCommand(String string) {
-        return warningCommandArguments(string) != null;
+        return warningArguments(string) != null;
     }
 
     /**
@@ -516,10 +535,13 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the WARNING command
      */
-    public static String warningCommandArguments(String string) {
+    public static String[] warningArguments(String string) {
         String[] split = splitString(string);
         if (split.length >= 2 && equalsKeyword(split[0], WARNING)) {
-            return string.substring(WARNING.toString().length());
+            String[] newSplit = new String[2];
+            newSplit[0] = WARNING.toString();
+            newSplit[1] = string.substring(WARNING.toString().length());
+            return newSplit;
         }
         return null;
     }
@@ -530,7 +552,7 @@ public class ComToolbox {
      * @return true if invalid
      */
     public static boolean isEndCommand(String string) {
-        return endCommandArguments(string) != null;
+        return endArguments(string) != null;
     }
 
     /**
@@ -538,16 +560,14 @@ public class ComToolbox {
      * @param string to be checked
      * @return arguments for the END command
      */
-    public static String endCommandArguments(String string) {
+    public static String[] endArguments(String string) {
         String[] split = splitString(string);
-        String result = null;
+        String[] result = null;
         if (split.length >= 3 && equalsKeyword(split[0], END)) {
             for (int i = 1; i < split.length; i++) {
-                if (!isInteger(split[i])) {
-                    result = null;
-                    break;
+                if (isInteger(split[i])) {
+                    result = split;
                 }
-                result = string.substring(WARNING.toString().length());
             }
         }
         return result;

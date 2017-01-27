@@ -37,10 +37,12 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleClientInput(String string) {
+        System.out.println(string);                                                                           // TEMPORARY!!!
         getServer().handleClientInput(this, string);
     }
 
     protected void handleClientOutput(String string) {
+        System.out.println(string);                                                                           // TEMPORARY!!!
         writeString(string);
     }
 
@@ -57,7 +59,8 @@ public class ClientHandler implements Runnable {
             shutDown();
         }
         catch (IOException e) {
-            getServer().printOutput(e.getMessage());
+            getServer().printOutput(e.getMessage() + ": Connection with Client was lost");
+            getServer().removeClientHandler(this);
         }
     }
 

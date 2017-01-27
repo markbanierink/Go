@@ -42,16 +42,14 @@ public class Game {
     }
 
     private void startGUI() {
-        //if (!guiIsAvailable()) {
+        if (!guiIsAvailable()) {
             goGui = new GoGUIIntegrator(true, true, getBoard().getBoardSize());
             getGui().startGUI();
-            System.out.println("start gui");
-        //}
+        }
     }
 
     private boolean guiIsAvailable() {
-        return true;
-        //return getGui() != null;
+        return getGui() != null;
     }
 
     /**
@@ -298,7 +296,7 @@ public class Game {
     /**
      *
      */
-    public void tableflip() {
+    public void tableFlip() {
         // wat moet er nu gebeuren?
     }
 

@@ -17,6 +17,7 @@ public class ConsoleReader implements Runnable {
     public void run() {
         String line;
         while ((line = readString("")) != null) {
+            System.out.println(line);                                                                           // TEMPORARY!!!
             getServerClient().handleConsoleInput(line);
         }
         System.out.println("ConsoleReader finished");
