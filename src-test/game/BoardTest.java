@@ -2,7 +2,7 @@ package game;
 
 import org.junit.jupiter.api.*;
 
-import static helper.Stone.*;
+import static helper.enums.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -11,11 +11,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BoardTest {
 
     private final static int BOARD_SIZE = 5;
+    private final static int MOVES_PER_TURN = 1;
+
     private Board board1 = new Board(BOARD_SIZE);
     private Board board2 = new Board(BOARD_SIZE);
     private Board board3 = new Board(BOARD_SIZE);
     private Board board4 = new Board(BOARD_SIZE + 1);
-    private Game game = new Game(BOARD_SIZE);
+    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN);
 
     @BeforeEach
     void setUp() {
@@ -61,5 +63,4 @@ public class BoardTest {
         assertFalse(board1.equals(board3));
         assertTrue(board1.equals(board2));
     }
-
 }

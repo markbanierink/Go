@@ -1,12 +1,12 @@
 package game;
 
-import helper.Stone;
+import helper.enums.Stone;
 
-import static helper.Stone.*;
+import static helper.enums.Stone.*;
 
 /**
- * Created by mark.banierink on 16-1-2017.
  * The Board class represents the board on which the game is played
+ * @author Mark Banierink
  */
 public class Board {
 
@@ -35,7 +35,7 @@ public class Board {
         return (getField(x, y) == EMPTY);
     }
 
-    private Stone getField(int x, int y) {
+    public Stone getField(int x, int y) {
         Stone result = null;
         if (isField(x, y)) {
             result = this.fields[x][y];
@@ -44,7 +44,7 @@ public class Board {
     }
 
     protected boolean isField(int x, int y) {
-        return ( (x >= 0 && x < getBoardSize()) && (y >= 0 && y < getBoardSize()) );
+        return ((x >= 0 && x < getBoardSize()) && (y >= 0 && y < getBoardSize()));
     }
 
     /**
@@ -62,7 +62,7 @@ public class Board {
         return this;
     }
 
-    private void setFieldEmpty(int x, int y) {
+    public void setFieldEmpty(int x, int y) {
         if (!isEmpty(x, y)) {
             setField(x, y, EMPTY);
         }
@@ -97,7 +97,8 @@ public class Board {
         Board board = (Board)object;
         if (this.getBoardSize() != board.getBoardSize()) {
             return false;
-        } else {
+        }
+        else {
             for (int i = 0; i < this.getBoardSize(); i++) {
                 for (int j = 0; j < this.getBoardSize(); j++) {
                     if (!this.getField(i, j).equals(board.getField(i, j))) {
@@ -108,5 +109,4 @@ public class Board {
             return true;
         }
     }
-
 }

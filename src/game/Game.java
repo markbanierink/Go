@@ -1,18 +1,22 @@
 package game;
 
 import com.nedap.go.gui.GoGUIIntegrator;
-import helper.Stone;
+import helper.enums.Stone;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static helper.Keyword.*;
-import static helper.Stone.*;
-import static helper.Strings.*;
+import static helper.enums.Keyword.*;
+import static helper.enums.Stone.*;
+import static helper.enums.Strings.*;
 
 /**
- * Created by mark.banierink on 16-1-2017.
  * The Game class provides the game itself. It manages the players, the board and the rules.
+ * @author Mark Banierink
  */
 public class Game {
 
@@ -22,27 +26,32 @@ public class Game {
     private int turnCounter = 1;
     private int passCounter = 0;
     private List<Board> boardHistory = new ArrayList<>();
-    private GoGUIIntegrator goGui;
-
+    private static GoGUIIntegrator goGui;
     private int movesPerTurn = 1;
+    private HashMap<Stone, HashSet<Integer>> chains = new HashMap<>();
 
     /**
      * Constructor of the game. Calls copyBoard(getBoard()).
      * @param boardSize the size of the board on which the game is to be played
      */
-    public Game(int boardSize) {
+    public Game(int boardSize, int movesPerTurn) {
         this.board = new Board(boardSize);
+        this.movesPerTurn = movesPerTurn;
+        startGUI();
         copyBoard(getBoard());
     }
 
-    /**
-     * Starts the game by assigning stones to players (assignStones()) and starting the GUI
-     * 2 players must have been added to the players List
-     */
-    public void startGame() {
-        assignStones();
-        goGui = new GoGUIIntegrator(true, true, getBoard().getBoardSize());
-        getGui().startGUI();
+    private void startGUI() {
+        //if (!guiIsAvailable()) {
+            goGui = new GoGUIIntegrator(true, true, getBoard().getBoardSize());
+            getGui().startGUI();
+            System.out.println("start gui");
+        //}
+    }
+
+    private boolean guiIsAvailable() {
+        return true;
+        //return getGui() != null;
     }
 
     /**
@@ -64,10 +73,6 @@ public class Game {
         return this.movesPerTurn;
     }
 
-    private void setMovesPerTurn(int movesPerTurn) {
-        this.movesPerTurn =  movesPerTurn;
-    }
-
     public Board getBoard() {
         return this.board;
     }
@@ -86,6 +91,101 @@ public class Game {
 
     private Stone getTurn() {
         return this.turn;
+    }
+
+    private int coordinateToIndex(int x, int y) {
+        return (y + 1) * getBoard().getBoardSize() + x;
+    }
+
+    private int[] indexToXY(int index) {
+        int x = index % getBoard().getBoardSize() - 1;
+        int y = (int)Math.floor(index / getBoard().getBoardSize()) - 1;
+        return new int[] {x, y};
+    }
+
+    private HashMap<Stone, HashSet<Integer>> getChains() {
+        return this.chains;
+    }
+
+    private void addNewChain(Stone stone, HashSet<Integer> chain) {
+        getChains().put(stone, chain);
+    }
+
+    private boolean hasFreedom(int index) {
+        return degreesOfFreedom(index) > 0;
+    }
+
+    private int degreesOfFreedom(int index) {
+        HashSet<Integer> coordinates = surroundings(index);
+        int degrees = 0;
+        for (Integer coordinate : coordinates) {
+            int[] xy = indexToXY(coordinate);
+            if (getBoard().isEmpty(xy[0], xy[1])) {
+                degrees++;
+            }
+        }
+        return degrees;
+    }
+
+    private Stone getStone(int index) {
+        return getBoard().getField(indexToXY(index)[0], indexToXY(index)[1]);
+    }
+
+    private HashSet<Integer> increaseChain(int index, HashSet<Integer> chain) {
+        for (Integer coordinate : surroundings(index)) {
+            if (getStone(coordinate) != null && getStone(coordinate).equals(getStone(index)) && !chain.contains(coordinate)) {
+                chain.add(coordinate);
+                chain = increaseChain(coordinate, chain);
+            }
+        }
+        return chain;
+    }
+
+    private void findChains() {
+        int boardSize = getBoard().getBoardSize()*getBoard().getBoardSize();
+        for (int i = 1; i < boardSize; i++) {
+            HashSet<Integer> chain = increaseChain(i, new HashSet<>());
+            if (chain.size() > 0) {
+                addNewChain(getStone(i), chain);
+            }
+        }
+    }
+
+    private HashSet<Integer> surroundings(int index) {
+        int boardSize = getBoard().getBoardSize();
+        int[] pos = indexToXY(index);
+        int[] coordinates = {pos[0] + 1, pos[1], pos[0] - 1, pos[1], pos[0], pos[1] + 1, pos[0], pos[1] - 1};
+        HashSet<Integer> indices = new HashSet<>();
+        for (int i = 0; i < coordinates.length; i++) {
+            if (coordinates[i*2] >= 0 && coordinates[i*2] < boardSize && coordinates[i*2+1] >= 0 && coordinates[i*2+1] < boardSize) {
+                indices.add(coordinateToIndex(coordinates[i*2], coordinates[i*2+1]));
+            }
+        }
+        return indices;
+    }
+
+    private void captureFields(HashSet<Integer> chain) {
+        for (Integer index : chain) {
+            captureField(index);
+        }
+    }
+
+    private void captureField(int index) {
+        removeStone(indexToXY(index)[0], indexToXY(index)[1]);
+    }
+
+    private boolean hasDegreesOfFreedom(HashSet<Integer> chain) {
+        return chainDegreesOfFreedom(chain) > 0;
+    }
+
+    private int chainDegreesOfFreedom(HashSet<Integer> chain) {
+        int degrees = 0;
+        for (Integer index : chain) {
+            if (hasFreedom(index)) {
+                degrees++;
+            }
+        }
+        return degrees;
     }
 
     /**
@@ -121,16 +221,25 @@ public class Game {
     }
 
     /**
-     * Adds a player to the list of players
-     * @param player Player object to add
+     * Adds a player to the list of players and assigns a free Stone to it
+     * @param player to add
      */
     public void addPlayer(Player player) {
         this.players.add(player);
+        player.setStone(getFreeStone());
+    }
+
+    private Stone getFreeStone() {
+        Stone stone = randomStone(numPlayers());
+        while (getPlayerByStone(stone) != null) {
+            stone = stone.nextStone(numPlayers());
+        }
+        return stone;
     }
 
     /**
      * Removes a player from the players list
-     * @param player The Player that is removed
+     * @param player that is removed
      */
     public void removePlayer(Player player) {
         this.players.remove(player);
@@ -138,8 +247,8 @@ public class Game {
 
     /**
      * Returns the player, based on the assigned Stone
-     * @param stone The Stone to find the Player of
-     * @return Player object to which the Stone is assigned, null if none was found
+     * @param stone to find the Player of
+     * @return Player to which the Stone is assigned, null if none was found
      */
     public Player getPlayerByStone(Stone stone) {
         for (Player listedPlayer : getPlayers()) {
@@ -152,25 +261,22 @@ public class Game {
 
     private void nextTurn() {
         copyBoard(getBoard());
-        if (getTurnNumber() % movesPerTurn == 0) {
+        if (getTurnNumber() % getMovesPerTurn() == 0) {
             this.turn = getTurn().nextStone(numPlayers());
         }
         turnCounter++;
     }
 
-    private void assignStones() {
-        for (Player player : getPlayers()) {
-            Stone stone = randomStone(numPlayers());
-            while (getPlayerByStone(stone) != null) {           // possible perpetual loop, needs improvement
-                stone = randomStone(numPlayers());
-            }
-            player.setStone(stone);
-        }
-    }
-
     private void placeStone(int x, int y, Stone stone) {
         getBoard().setField(x, y, stone);
-        getGui().addStone(x, y, stone2bool(stone));
+
+    }
+
+    private void removeStone(int x, int y) {
+        getBoard().setFieldEmpty(x, y);
+        if (guiIsAvailable()) {
+            getGui().removeStone(x, y);
+        }
     }
 
     /**
@@ -193,7 +299,7 @@ public class Game {
      *
      */
     public void tableflip() {
-                                                                // wat moet er nu gebeuren?
+        // wat moet er nu gebeuren?
     }
 
     private String scoreString() {
@@ -210,6 +316,7 @@ public class Game {
 
     private void increasePassCounter() {
         this.passCounter++;
+        System.out.println(passCounter);
     }
 
     private void resetPassCounter() {
@@ -221,12 +328,13 @@ public class Game {
     }
 
     private int getScore(Stone stone) {
+
         return 0;
     }
 
     /**
      * Places a Stone on the board and the GUI and changes the turn
-     * @param stone The Stone to be set
+     * @param stone of the Player that is moving
      * @param x integer of the x coordinate of the position the Stone is placed
      * @param y integer of the y coordinate of the position the Stone is placed
      */
@@ -234,7 +342,9 @@ public class Game {
         placeStone(x, y, stone);
         resetPassCounter();
         nextTurn();
-        getGui().addStone(x, y, stone2bool(stone));
+        if (guiIsAvailable()) {
+            getGui().addStone(x, y, stone2bool(stone));
+        }
     }
 
     /**
@@ -252,7 +362,12 @@ public class Game {
      * @return true if the Stone may Tableflip, false if it may not
      */
     public boolean isValidTableflip(Stone stone) {
-        return isTurn(stone);
+        return true;
+        //return isTurn(stone);                                                     // TABLEFLIP is always allowed
+    }
+
+    public boolean isValidMove(Stone stone, int x, int y) {
+        return checkMoveValidity(stone, x, y).equals(VALID.toString());
     }
 
     /**
@@ -264,13 +379,16 @@ public class Game {
      */
     public String checkMoveValidity(Stone stone, int x, int y) {
         String result = VALID.toString();
-        if (!isTurn(stone)) {                                                               // Check if it is this player's turn
+        if (!isTurn(stone)) {                                                       // Check if it is this player's turn
             result = NOT_TURN.toString();
-        } else if (!getBoard().isField(x, y)) {                                             // Check if the position exists
+        }
+        else if (!getBoard().isField(x, y)) {                                       // Check if the position exists
             result = NOT_FIELD.toString();
-        } else if (!getBoard().isEmpty(x, y)) {                                             // Check if the desired position is free
+        }
+        else if (!getBoard().isEmpty(x, y)) {                                       // Check if the desired position is free
             result = NOT_FREE_FIELD.toString();
-        } else if (boardExists(getBoard().boardCopy().setField(x, y, stone))){  // Check if it doesn't match a previous situation
+        }
+        else if (boardExists(getBoard().boardCopy().setField(x, y, stone))) {       // Check if it doesn't match a previous situation
             result = KO.toString();
         }
         return result;
@@ -288,5 +406,4 @@ public class Game {
         }
         return false;
     }
-
 }

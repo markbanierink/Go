@@ -8,12 +8,8 @@ import org.junit.jupiter.api.Test;
 public class GameTest {
 
     private static final int BOARD_SIZE = 5;
-    private Game game = new Game(5);
-
-    @Test
-    void testStartGame() {
-
-    }
+    private static final int MOVES_PER_TURN = 1;
+    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN);
 
     @Test
     void testGetOpponents() {

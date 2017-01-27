@@ -1,10 +1,12 @@
 package helper;
 
-import org.junit.jupiter.api.Test;
+import game.Player;
+import helper.enums.Stone;
+import org.junit.jupiter.api.*;
 
 import static helper.ComToolbox.*;
-import static helper.Keyword.*;
-import static helper.Stone.*;
+import static helper.enums.Keyword.*;
+import static helper.enums.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -13,39 +15,77 @@ import static org.junit.jupiter.api.Assertions.*;
 class ComToolboxTest {
 
     private static final String SPACE = " ";
-    private static final String STRING = "name";
-    private static final String INT = "9";
-    private static final String STONE = BLACK.toString();
+    private static final String NAME1 = "name";
+    private static final String NAME2 = "anotherName";
+    private static final String INT_STRING8 = "8";
+    private static final String INT_STRING9 = "9";
+    private static final int INT8 = 8;
+    private static final int INT9 = 9;
+    private static final Stone STONE1 = BLACK;
+    private static final Stone STONE2 = WHITE;
+    private static final int[] BOARD_SIZE_RANGE = {5, 131};
 
-    private String go = GO + SPACE + STRING + SPACE + INT;
+    private Player newPlayer1;
+    private Player newPlayer2;
+
+    private String player = PLAYER.toString() + SPACE + NAME1;
+    private String go = GO.toString() + SPACE + INT9;
     private String cancel = CANCEL.toString();
-    private String move = MOVE + SPACE + INT + SPACE + INT;
+    private String move = MOVE + SPACE + INT9 + SPACE + INT9;
     private String pass = PASS.toString();
     private String tableFlip = TABLEFLIP.toString();
-    private String chat = CHAT + SPACE + STRING;
+    private String chat = CHAT + SPACE + NAME1 + ":" + SPACE + NAME2;
     private String waiting = WAITING.toString();
-    private String ready = READY + SPACE + STONE + SPACE + STRING + SPACE + INT;
-    private String valid = VALID + SPACE + STONE + SPACE + INT + SPACE + INT;
-    private String invalid = INVALID + SPACE + STONE + SPACE + STRING;
-    private String passed = PASSED + SPACE + STONE;
-    private String tableFlipped = TABLEFLIPPED + SPACE + STONE;
-    private String warning = WARNING + SPACE + STRING;
-    private String end = END + SPACE + INT + SPACE + INT;
+    private String ready = READY + SPACE + INT9 + SPACE + STONE1.toString().toLowerCase() + SPACE + NAME1 + SPACE + STONE2.toString().toLowerCase() + SPACE + NAME2;
+    private String valid = VALID + SPACE + STONE1.toString().toLowerCase() + SPACE + INT9 + SPACE + INT9;
+    private String invalid = INVALID + SPACE + STONE1.toString().toLowerCase() + SPACE + NAME1;
+    private String passed = PASSED + SPACE + STONE1.toString().toLowerCase();
+    private String tableFlipped = TABLEFLIPPED + SPACE + STONE1.toString().toLowerCase();
+    private String warning = WARNING + SPACE + NAME1;
+    private String end = END + SPACE + INT8 + SPACE + INT9;
 
-    private String string2 = STRING + SPACE + CHAT;
-    private String string3 = CANCEL + SPACE + STRING;
-    private String string4 = WHITE + SPACE + STRING;
-    private String string5 = PASSED + SPACE + STRING;
-
-    private String[] splitString1 = {GO.toString(), STRING, INT};
+    private String[] splitString1 = {GO.toString(), INT_STRING9};
     private String[] splitString2 = {"WHITE"};
+    private int[] scores = {INT8, INT9};
+    private Stone[] stones = {STONE1, STONE2};
+    private Player[] players = {newPlayer1, newPlayer2};
 
-    @Test
-    void testGetKeyword() {
-        assertEquals(GO, getKeyword(go));
-        assertEquals(null, getKeyword(string2));
-        assertEquals(CANCEL, getKeyword(string3));
-        assertEquals(null, getKeyword(string4));
+    private String commandPlayer;
+    private String commandGo;
+    private String commandWaiting;
+    private String commandCancel;
+    private String commandMove;
+    private String commandPass;
+    private String commandTableFlip;
+    private String commandChat;
+    private String commandReady;
+    private String commandValid;
+    private String commandInvalid;
+    private String commandPassed;
+    private String commandTableFlipped;
+    private String commandWarning;
+    private String commandEnd;
+
+    @BeforeEach
+    void setUp() {
+        this.newPlayer1 = new Player(NAME1);
+        this.newPlayer2 = new Player(NAME2);
+
+        commandPlayer = createCommandPlayer(newPlayer1);
+        commandGo = createCommandGo(INT9);
+        commandWaiting = createCommandWaiting();
+        commandCancel = createCommandCancel();
+        commandMove = createCommandMove(INT9, INT9);
+        commandPass = createCommandPass();
+        commandTableFlip = createCommandTableFlip();
+        commandChat = createCommandChat(NAME1, NAME2);
+        commandReady = createCommandReady(INT9, stones, players);
+        commandValid = createCommandValid(STONE1, INT9, INT9);
+        commandInvalid = createCommandInvalid(STONE1, NAME1);
+        commandPassed = createCommandPassed(STONE1);
+        commandTableFlipped = createCommandTableFlipped(STONE1);
+        commandWarning = createCommandWarning(NAME1);
+        commandEnd = createCommandEnd(scores);
     }
 
     @Test
@@ -56,59 +96,258 @@ class ComToolboxTest {
 
     @Test
     void testIsInteger() {
-        assertTrue(isInteger(INT));
-        assertFalse(isInteger(STRING));
+        assertTrue(isInteger(INT_STRING9));
+        assertFalse(isInteger(NAME1));
         assertFalse(isInteger(go));
     }
 
     @Test
     void testIsBoardSize() {
-        assertTrue(isBoardSize(9));
-        assertFalse(isBoardSize(1));
-        assertFalse(isBoardSize(132));
-        assertFalse(isBoardSize(0));
-        assertFalse(isBoardSize(-3));
-        assertFalse(isBoardSize(8));
+        assertTrue(isBoardSize(9, BOARD_SIZE_RANGE));
+        assertFalse(isBoardSize(1, BOARD_SIZE_RANGE));
+        assertFalse(isBoardSize(132, BOARD_SIZE_RANGE));
+        assertFalse(isBoardSize(0, BOARD_SIZE_RANGE));
+        assertFalse(isBoardSize(-3, BOARD_SIZE_RANGE));
+        assertFalse(isBoardSize(8, BOARD_SIZE_RANGE));
+    }
+
+    @Test
+    void testCreateCommandPlayer() {
+        assertEquals(player, commandPlayer);
     }
 
     @Test
     void testCreateCommandGo() {
-        assertEquals(go, createCommandGo(STRING, 9));
+        assertEquals(go, commandGo);
+    }
+
+    @Test
+    void testCreateCommandWait() {
+        assertEquals(waiting, commandWaiting);
+    }
+
+    @Test
+    void testCreateCommandCancel() {
+        assertEquals(cancel, commandCancel);
+    }
+
+    @Test
+    void testCreateCommandMove() {
+        assertEquals(move, commandMove);
+    }
+
+    @Test
+    void testCreateCommandPass() {
+        assertEquals(pass, createCommandPass());
+    }
+
+    @Test
+    void testCreateCommandTableFlip() {
+        assertEquals(tableFlip, commandTableFlip);
+    }
+
+    @Test
+    void testCreateCommandChat() {
+        assertEquals(chat, commandChat);
+    }
+
+    @Test
+    void testCreateCommandReady() {
+        assertEquals(ready, commandReady);
+    }
+
+    @Test
+    void testCreateCommandValid() {
+        assertEquals(valid, commandValid);
+    }
+
+    @Test
+    void testCreateCommandInvalid() {
+        assertEquals(invalid, commandInvalid);
+    }
+
+    @Test
+    void testCreateCommandPassed() {
+        assertEquals(passed, commandPassed);
+    }
+
+    @Test
+    void testCreateCommandTableFlipped() {
+        assertEquals(tableFlipped, commandTableFlipped);
+    }
+
+    @Test
+    void testCreateCommandWarning() {
+        assertEquals(warning, commandWarning);
+    }
+
+    @Test
+    void testCreateCommandEnd() {
+        assertEquals(end, commandEnd);
+    }
+
+    @Test
+    void testIsPlayerCommand() {
+        assertTrue(isPlayerCommand(commandPlayer));
+        assertFalse(isPlayerCommand(commandGo));
+    }
+
+    @Test
+    void playerCommandArguments() {
+
+    }
+
+    @Test
+    void testIsGoCommand() {
+        assertTrue(isGoCommand(commandGo));
+        assertFalse(isGoCommand(commandPlayer));
+    }
+
+    @Test
+    void goCommandArguments() {
+
+    }
+
+    @Test
+    void testIsWaitingCommand() {
+        assertTrue(isWaitingCommand(commandWaiting));
+        assertFalse(isWaitingCommand(commandGo));
+    }
+
+    @Test
+    void waitingCommandArguments() {
+
+    }
+
+    @Test
+    void testIsCancelCommand() {
+        assertTrue(isCancelCommand(commandCancel));
+        assertFalse(isCancelCommand(commandGo));
+    }
+
+    @Test
+    void cancelCommandArguments() {
+
+    }
+
+    @Test
+    void testIsReadyCommand() {
+        assertTrue(isReadyCommand(commandReady));
+        assertFalse(isReadyCommand(commandGo));
+    }
+
+    @Test
+    void readyCommandArguments() {
+
+    }
+
+    @Test
+    void testIsMoveCommand() {
+        assertTrue(isMoveCommand(commandMove));
+        assertFalse(isMoveCommand(commandGo));
+    }
+
+    @Test
+    void moveCommandArguments() {
+
     }
 
     @Test
     void testIsValidCommand() {
-        assertTrue(isValidCommand(GO, go));
-        assertTrue(isValidCommand(WAITING, waiting));
-        assertTrue(isValidCommand(CANCEL, cancel));
-        assertTrue(isValidCommand(READY, ready));
-        assertTrue(isValidCommand(MOVE, move));
-        assertTrue(isValidCommand(VALID, valid));
-        assertTrue(isValidCommand(INVALID, invalid));
-        assertTrue(isValidCommand(PASS, pass));
-        assertTrue(isValidCommand(PASSED, passed));
-        assertTrue(isValidCommand(TABLEFLIP, tableFlip));
-        assertTrue(isValidCommand(TABLEFLIPPED, tableFlipped));
-        assertTrue(isValidCommand(CHAT, chat));
-        assertTrue(isValidCommand(WARNING, warning));
-        assertTrue(isValidCommand(END, end));
-
-        assertFalse(isValidCommand(GO, waiting));
-        assertFalse(isValidCommand(WAITING, go));
-        assertFalse(isValidCommand(CANCEL, go));
-        assertFalse(isValidCommand(READY, go));
-        assertFalse(isValidCommand(MOVE, go));
-        assertFalse(isValidCommand(VALID, go));
-        assertFalse(isValidCommand(INVALID, go));
-        assertFalse(isValidCommand(PASS, go));
-        assertFalse(isValidCommand(PASSED, go));
-        assertFalse(isValidCommand(TABLEFLIP, go));
-        assertFalse(isValidCommand(TABLEFLIPPED, go));
-        assertFalse(isValidCommand(CHAT, go));
-        assertFalse(isValidCommand(WARNING, go));
-        assertFalse(isValidCommand(END, go));
-
-        assertFalse(isValidCommand(PASSED, string5));
+        assertTrue(isValidCommand(commandValid));
+        assertFalse(isValidCommand(commandGo));
     }
 
+    @Test
+    void validCommandArguments() {
+
+    }
+
+    @Test
+    void testIsInvalidCommand() {
+        assertTrue(isInvalidCommand(commandInvalid));
+        assertFalse(isInvalidCommand(commandGo));
+    }
+
+    @Test
+    void testInvalidCommandArguments() {
+
+    }
+
+    @Test
+    void testIsPassCommand() {
+        assertTrue(isPassCommand(commandPass));
+        assertFalse(isPassCommand(commandGo));
+    }
+
+    @Test
+    void passCommandArguments() {
+
+    }
+
+    @Test
+    void testIsPassedCommand() {
+        assertTrue(isPassedCommand(commandPassed));
+        assertFalse(isPassedCommand(commandGo));
+    }
+
+    @Test
+    void passedCommandArguments() {
+
+    }
+
+    @Test
+    void testIsTableFlipCommand() {
+        assertTrue(isTableFlipCommand(commandTableFlip));
+        assertFalse(isTableFlipCommand(commandGo));
+    }
+
+    @Test
+    void tableFlipCommandArguments() {
+
+    }
+
+    @Test
+    void testIsTableFlippedCommand() {
+        assertTrue(isTableFlippedCommand(commandTableFlipped));
+        assertFalse(isTableFlippedCommand(commandGo));
+    }
+
+    @Test
+    void tableFlippedCommandArguments() {
+
+    }
+
+    @Test
+    void testIsChatCommand() {
+        assertTrue(isChatCommand(commandChat));
+        assertFalse(isChatCommand(commandGo));
+    }
+
+    @Test
+    void chatCommandArguments() {
+
+    }
+
+    @Test
+    void testIsWarningCommand() {
+        assertTrue(isWarningCommand(commandWarning));
+        assertFalse(isWarningCommand(commandGo));
+    }
+
+    @Test
+    void warningCommandArguments() {
+
+    }
+
+    @Test
+    void testIsEndCommand() {
+        assertTrue(isEndCommand(commandEnd));
+        assertFalse(isEndCommand(commandGo));
+    }
+
+    @Test
+    void endCommandArguments() {
+
+    }
 }

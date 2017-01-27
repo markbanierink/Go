@@ -1,10 +1,11 @@
 package game;
 
-import helper.Stone;
+import helper.enums.Stone;
 
 /**
- * Created by mark.banierink on 16-1-2017.
  * Player of the game. Used by both Server and Client
+ *
+ * @author Mark Banierink
  */
 public class Player {
 
@@ -34,5 +35,4 @@ public class Player {
     public void setStone(Stone stone) {
         this.stone = stone;
     }
-
 }

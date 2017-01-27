@@ -4,8 +4,9 @@ import java.io.*;
 import java.net.Socket;
 
 /**
- * Created by mark.banierink on 17-1-2017.
  * The ClientHandler can run as a separate thread. It manages the incoming and outgoing buffer stream from Server to Client.
+ *
+ * @author Mark Banierink
  */
 public class ClientHandler implements Runnable {
 
@@ -25,7 +26,8 @@ public class ClientHandler implements Runnable {
         try {
             this.clientInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             this.clientOutput = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             getServer().printOutput(e.getMessage());
         }
     }
@@ -53,7 +55,8 @@ public class ClientHandler implements Runnable {
                 handleClientInput(line);
             }
             shutDown();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             getServer().printOutput(e.getMessage());
         }
     }
@@ -63,7 +66,8 @@ public class ClientHandler implements Runnable {
             this.clientOutput.write(string);
             this.clientOutput.newLine();
             this.clientOutput.flush();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             getServer().printOutput(e.getMessage());
         }
     }
@@ -74,9 +78,9 @@ public class ClientHandler implements Runnable {
             this.clientInput.close();
             this.clientOutput.close();
             this.socket.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             getServer().printOutput(e.getMessage());
         }
     }
-
 }

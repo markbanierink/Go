@@ -5,6 +5,8 @@ import java.net.Socket;
 
 /**
  * Created by mark.banierink on 18-1-2017.
+ *
+ * @author Mark Banierink
  */
 public class SocketReader implements Runnable {
 
@@ -17,7 +19,8 @@ public class SocketReader implements Runnable {
         this.client = client;
         try {
             this.serverOutput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
@@ -30,7 +33,8 @@ public class SocketReader implements Runnable {
                 System.out.println(line);
             }
             shutDown();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
@@ -40,9 +44,9 @@ public class SocketReader implements Runnable {
             System.out.println("Stopping SocketReader");
             this.serverOutput.close();
             this.socket.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
-
 }

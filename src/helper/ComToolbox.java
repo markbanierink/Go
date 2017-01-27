@@ -1,26 +1,17 @@
 package helper;
 
-import static helper.Keyword.*;
-import static helper.Strings.*;
+import game.Player;
+import helper.enums.Keyword;
+import helper.enums.Stone;
+
+import static helper.enums.Keyword.*;
+import static helper.enums.Strings.*;
 
 /**
- * Created by mark.banierink on 18-1-2017.
  * This toolbox provides methods for checking protocol Keywords and Strings
+ * @author Mark Banierink
  */
 public class ComToolbox {
-
-    /**
-     * Returns the Keyword of a string if it is in the first position
-     * @param string String to be searched for a Keyword
-     * @return Keyword Keyword that is found, null if none is found
-     */
-    public static Keyword getKeyword(String string) {
-        try {
-            return Keyword.valueOf(splitString(string)[0]);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
 
     private static boolean equalsKeyword(String word, Keyword keyword) {
         return word.equals(keyword.toString());
@@ -35,10 +26,6 @@ public class ComToolbox {
         return string.split(SPACE.toString());
     }
 
-    private static int length(String[] split) {
-        return split.length;
-    }
-
     /**
      * Checks if the provided String is a integer
      * @param word is the string to test
@@ -48,14 +35,15 @@ public class ComToolbox {
         try {
             Integer.parseInt(word);
             return true;
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             return false;
         }
     }
 
     private static boolean isStone(String word) {
         for (Stone stone : Stone.values()) {
-            if(isSameStone(word, stone)) {
+            if (isSameStone(word.toUpperCase(), stone)) {
                 return true;
             }
         }
@@ -65,10 +53,11 @@ public class ComToolbox {
     /**
      * Checks if the given board size is allowed
      * @param boardSize the requested board size
-     * @return true if board size is allow, false if not
+     * @param boardSizeRange array with two elements that defines the minimum and maximum (inclusive)
+     * @return true if board size between the range and an odd number, false if not
      */
-    public static boolean isBoardSize(int boardSize) {                                      // make more dynamic!!!
-        if (boardSize >= 5 && boardSize <= 131) {
+    public static boolean isBoardSize(int boardSize, int[] boardSizeRange) {
+        if (boardSize >= boardSizeRange[0] && boardSize <= boardSizeRange[1]) {
             if (isOdd(boardSize)) {
                 return true;
             }
@@ -85,261 +74,482 @@ public class ComToolbox {
     }
 
     /**
-     * Creates a proper GO command from the provided arguments
-     * @param name must be a string without spaces, isn't checked
-     * @param boardSize the board size integer, isn't checked
+     * Creates a valid PLAYER command from the provided arguments
+     * @param player must be the player that is processed
      * @return String that can be used as a commando for the server
      */
-    public static String createCommandGo(String name, int boardSize) {
-        return GO.toString() + SPACE + name + SPACE + boardSize;
-    }
-
-    private static boolean isGo(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], GO)) {
-                if ((length(splitString(string)) == 3) && isInteger(splitString(string)[2])) {
-                    return isBoardSize(Integer.parseInt(splitString(string)[2]));
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean isWaiting(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], WAITING)) {
-                return (length(splitString(string)) == 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isCancel(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], CANCEL)) {
-                return (length(splitString(string)) == 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isReady(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], READY)) {
-                return ((length(splitString(string)) == 4) &&
-                        isStone(splitString(string)[1]) &&
-                        isInteger(splitString(string)[3]));
-            }
-        }
-        return false;
-    }
-
-    private static boolean isMove(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], MOVE)) {
-                return ((length(splitString(string)) == 3) &&
-                        isInteger(splitString(string)[1]) &&
-                        isInteger(splitString(string)[2]));
-            }
-        }
-        return false;
-    }
-
-    private static boolean isValid(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], VALID)) {
-                return ((length(splitString(string)) == 4) &&
-                        isStone(splitString(string)[1]) &&
-                        isInteger(splitString(string)[2]) &&
-                        isInteger(splitString(string)[3]));
-            }
-        }
-        return false;
-    }
-
-    private static boolean isInvalid(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], INVALID)) {
-                return (length(splitString(string)) == 3) &&
-                        isStone(splitString(string)[1]);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isPass(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], PASS)) {
-                return (length(splitString(string)) == 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isPassed(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], PASSED)) {
-                return ((length(splitString(string)) == 2) &&
-                        isStone(splitString(string)[1]));
-            }
-        }
-        return false;
-    }
-
-    private static boolean isTableFlip(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], TABLEFLIP)) {
-                return (length(splitString(string)) == 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isTableFlipped(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], TABLEFLIPPED)) {
-                return ((length(splitString(string)) == 2) &&
-                        isStone(splitString(string)[1]));
-            }
-        }
-        return false;
-    }
-
-    private static boolean isChat(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], CHAT)) {
-                return (length(splitString(string)) > 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isWarning(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], WARNING)) {
-                return (length(splitString(string)) > 1);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isEnd(String string) {
-        if (string.length() > 0) {
-            if (equalsKeyword(splitString(string)[0], END)) {
-                return ((length(splitString(string)) == 3) &&
-                        isInteger(splitString(string)[1]) &&
-                        isInteger(splitString(string)[2]));
-            }
-        }
-        return false;
+    public static String createCommandPlayer(Player player) {
+        return PLAYER.toString() + SPACE + player.getName();
     }
 
     /**
-     * Checks if the input is a valid command, based on the keyword
-     * @param keyword the Keyword with which the string is compared
-     * @param string the String that is checked for the Keyword and correct composition
-     * @return true if the string comply's with the required structure
+     * Creates a valid GO command from the provided arguments
+     * @param boardSize is the requested board size
+     * @return String that can be used as a commando for the server
      */
-    public static boolean isValidCommand(Keyword keyword, String string) {
-        boolean result = false;
-        switch (keyword) {
-            case GO:
-                result = isGo(string);
-                break;
-            case CANCEL:
-                result = isCancel(string);
-                break;
-            case MOVE:
-                result = isMove(string);
-                break;
-            case PASS:
-                result = isPass(string);
-                break;
-            case TABLEFLIP:
-                result = isTableFlip(string);
-                break;
-            case CHAT:
-                result = isChat(string);
-                break;
-            case WAITING:
-                result = isWaiting(string);
-                break;
-            case READY:
-                result = isReady(string);
-                break;
-            case VALID:
-                result = isValid(string);
-                break;
-            case INVALID:
-                result = isInvalid(string);
-                break;
-            case PASSED:
-                result = isPassed(string);
-                break;
-            case TABLEFLIPPED:
-                result = isTableFlipped(string);
-                break;
-            case WARNING:
-                result = isWarning(string);
-                break;
-            case END:
-                result = isEnd(string);
-                break;
+    public static String createCommandGo(int boardSize) {
+        return GO.toString() + SPACE + boardSize;
+    }
+
+    /**
+     * Creates a valid CANCEL command from the provided arguments
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandCancel() {
+        return CANCEL.toString();
+    }
+
+    /**
+     * Creates a valid WAITING command from the provided arguments
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandWaiting() {
+        return WAITING.toString();
+    }
+
+    /**
+     * Creates a valid MOVE command from the provided arguments
+     * @param x the coordinate of the move
+     * @param y the coordinate of the move
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandMove(int x, int y) {
+        return MOVE.toString() + SPACE + x + SPACE + y;
+    }
+
+    /**
+     * Creates a valid PASS command from the provided arguments
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandPass() {
+        return PASS.toString();
+    }
+
+    /**
+     * Creates a valid TABLEFLIP command from the provided arguments
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandTableFlip() {
+        return TABLEFLIP.toString();
+    }
+
+    /**
+     * Creates a valid CHAT command from the provided arguments
+     * @param sender is the name of the sender (client or server)
+     * @param message is the message string that is sent
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandChat(String sender, String message) {
+        return CHAT.toString() + SPACE + sender + ":" + SPACE + message;
+    }
+
+    /**
+     * Creates a valid READY command from the provided arguments
+     * @param boardSize is the board size on which is going to be played
+     * @param stones contains the stones of the players
+     * @param players contains the names of the players
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandReady(int boardSize, Stone[] stones, Player[] players) {
+        String result = READY.toString() + SPACE + boardSize;
+        for (int i = 0; i < stones.length; i++) {
+            result += SPACE.toString() + stones[i].toString().toLowerCase() + SPACE + players[i].getName();
         }
         return result;
     }
 
-//    public static boolean isServerCommand(String string) {
-//        if (isGo(string)) {
-//            return true;
-//        }
-//        if (isCancel(string)) {
-//            return true;
-//        }
-//        if (isMove(string)) {
-//            return true;
-//        }
-//        if (isPass(string)) {
-//            return true;
-//        }
-//        if (isTableFlip(string)) {
-//            return true;
-//        }
-//        if (isChat(string)) {
-//            return true;
-//        }
-//        return false;
-//    }
-//
-//    public static boolean isClientCommand(String string) {
-//        if (isWaiting(string)) {
-//            return true;
-//        }
-//        if (isReady(string)) {
-//            return true;
-//        }
-//        if (isValid(string)) {
-//            return true;
-//        }
-//        if (isInvalid(string)) {
-//            return true;
-//        }
-//        if (isPassed(string)) {
-//            return true;
-//        }
-//        if (isTableFlipped(string)) {
-//            return true;
-//        }
-//        if (isChat(string)) {
-//            return true;
-//        }
-//        if (isWarning(string)) {
-//            return true;
-//        }
-//        if (isEnd(string)) {
-//            return true;
-//        }
-//        return false;
-//    }
+    /**
+     * Creates a valid VALID command from the provided arguments
+     * @param stone is the stone of the player
+     * @param x the coordinate of the move
+     * @param y the coordinate of the move
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandValid(Stone stone, int x, int y) {
+        return VALID.toString() + SPACE + stone.toString().toLowerCase() + SPACE + x + SPACE + y;
+    }
 
+    /**
+     * Creates a valid INVALID command from the provided arguments
+     * @param stone is the stone of the player
+     * @param reason is the reason the move is invalid
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandInvalid(Stone stone, String reason) {
+        return INVALID.toString() + SPACE + stone.toString().toLowerCase() + SPACE + reason;
+    }
+
+    /**
+     * Creates a valid PASSED command from the provided arguments
+     * @param stone is the stone of the player
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandPassed(Stone stone) {
+        return PASSED.toString() + SPACE + stone.toString().toLowerCase();
+    }
+
+    /**
+     * Creates a valid TABLEFLIPPED command from the provided arguments
+     * @param stone is the stone of the player
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandTableFlipped(Stone stone) {
+        return TABLEFLIPPED.toString() + SPACE + stone.toString().toLowerCase();
+    }
+
+    /**
+     * Creates a valid WARNING command from the provided arguments
+     * @param message is the warning message
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandWarning(String message) {
+        return WARNING.toString() + SPACE + message;
+    }
+
+    /**
+     * Creates a valid END command from the provided arguments
+     * @param scores is are the scores of the players in color order
+     * @return String that can be used as a commando for the server
+     */
+    public static String createCommandEnd(int[] scores) {
+        String result = END.toString();
+        for (int i = 0; i < scores.length; i++) {
+            result += SPACE.toString() + scores[i];
+        }
+        return result;
+    }
+
+    /**
+     * Checks if the string contains a valid PLAYER command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isPlayerCommand(String string) {
+        return playerCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return String containing the Player's name, or else null
+     */
+    public static String playerCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 2 && equalsKeyword(split[0], PLAYER)) {
+            return splitString(string)[1];
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid GO command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isGoCommand(String string) {
+        return goCommandArguments(string) != -1;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return int containing the Player's requested board size, or else -1
+     */
+    public static int goCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 2 && equalsKeyword(split[0], GO) && isInteger(split[1])) {
+            return Integer.parseInt(splitString(string)[1]);
+        }
+        return -1;
+    }
+
+    /**
+     * Checks if the string contains a valid WAITING command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isWaitingCommand(String string) {
+        return waitingCommandArguments(string);
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return true if it is WAITING
+     */
+    public static boolean waitingCommandArguments(String string) {
+        String[] split = splitString(string);
+        return split.length == 1 && (equalsKeyword(split[0], WAITING));
+    }
+
+    /**
+     * Checks if the string contains a valid CANCEL command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isCancelCommand(String string) {
+        return cancelCommandArguments(string);
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return true if it is CANCEL
+     */
+    public static boolean cancelCommandArguments(String string) {
+        String[] split = splitString(string);
+        return split.length == 1 && equalsKeyword(split[0], CANCEL);
+    }
+
+    /**
+     * Checks if the string contains a valid READY command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isReadyCommand(String string) {
+        return readyCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the READY command
+     */
+    public static String readyCommandArguments(String string) {
+        String result = null;
+        String[] split = splitString(string);
+        if (split.length >= 6 && !isOdd(split.length) && equalsKeyword(split[0], READY) && isInteger(split[1])) {
+            for (int i = 2; i < split.length; i += 2) {
+                if (isStone(split[i])) {
+                    result = string.substring(READY.toString().length());
+                }
+                else {
+                    result = null;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks if the string contains a valid MOVE command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isMoveCommand(String string) {
+        return moveCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the MOVE command
+     */
+    public static String moveCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 3 && equalsKeyword(split[0], MOVE) && isInteger(split[1]) && isInteger(split[2])) {
+            return string.substring(MOVE.toString().length() + 1);
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid VALID command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isValidCommand(String string) {
+        return validCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the VALID command
+     */
+    public static String validCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 4 && equalsKeyword(split[0], VALID) && isStone(split[1]) && isInteger(split[2]) && isInteger(split[3])) {
+            return string.substring(VALID.toString().length());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid INVALID command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isInvalidCommand(String string) {
+        return invalidCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the INVALID command
+     */
+    public static String invalidCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length >= 2 && equalsKeyword(split[0], INVALID) && isStone(split[1])) {
+            return string.substring(INVALID.toString().length());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid PASS command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isPassCommand(String string) {
+        return passCommandArguments(string);
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return true if it is PASS
+     */
+    public static boolean passCommandArguments(String string) {
+        String[] split = splitString(string);
+        return split.length == 1 && equalsKeyword(split[0], PASS);
+    }
+
+    /**
+     * Checks if the string contains a valid PASSED command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isPassedCommand(String string) {
+        return passedCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the PASSED command
+     */
+    public static Stone passedCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 2 && equalsKeyword(split[0], PASSED) && isStone(split[1])) {
+            return Stone.valueOf(split[1].toUpperCase());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid TABLEFLIP command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isTableFlipCommand(String string) {
+        return tableFlipCommandArguments(string);
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return true if it is TABLEFLIP
+     */
+    public static boolean tableFlipCommandArguments(String string) {
+        String[] split = splitString(string);
+        return split.length == 1 && equalsKeyword(split[0], TABLEFLIP);
+    }
+
+    /**
+     * Checks if the string contains a valid TABLEFLIPPED command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isTableFlippedCommand(String string) {
+        return tableFlippedCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the PASSED command
+     */
+    public static Stone tableFlippedCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 2 && equalsKeyword(split[0], TABLEFLIPPED) && isStone(split[1])) {
+            return Stone.valueOf(split[1].toUpperCase());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid CHAT command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isChatCommand(String string) {
+        return chatCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the CHAT command
+     */
+    public static String chatCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length >= 2 && equalsKeyword(split[0], CHAT)) {
+            return string.substring(CHAT.toString().length());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid WARNING command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isWarningCommand(String string) {
+        return warningCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the WARNING command
+     */
+    public static String warningCommandArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length >= 2 && equalsKeyword(split[0], WARNING)) {
+            return string.substring(WARNING.toString().length());
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid END command
+     * @param string to be checked
+     * @return true if invalid
+     */
+    public static boolean isEndCommand(String string) {
+        return endCommandArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return arguments for the END command
+     */
+    public static String endCommandArguments(String string) {
+        String[] split = splitString(string);
+        String result = null;
+        if (split.length >= 3 && equalsKeyword(split[0], END)) {
+            for (int i = 1; i < split.length; i++) {
+                if (!isInteger(split[i])) {
+                    result = null;
+                    break;
+                }
+                result = string.substring(WARNING.toString().length());
+            }
+        }
+        return result;
+    }
 }

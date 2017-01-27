@@ -2,6 +2,8 @@ package client;
 
 /**
  * Created by mark.banierink on 16-1-2017.
+ *
+ * @author Mark Banierink
  */
 public class HumanClient extends Client {
 
@@ -11,8 +13,6 @@ public class HumanClient extends Client {
     }
 
     public HumanClient() {
-        Thread consoleReader = new Thread(new ConsoleReader(this), "ConsoleReader");
-        consoleReader.start();
-    }
 
+    }
 }

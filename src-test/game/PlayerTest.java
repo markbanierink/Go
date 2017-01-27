@@ -1,10 +1,10 @@
 package game;
 
-import helper.Stone;
+import helper.enums.Stone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static helper.Stone.*;
+import static helper.enums.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PlayerTest {
 
-    private final static String NAME = "Piet";
+    private final static String NAME = "Name";
     private final static Stone STONE = BLACK;
     private Player player1 = new Player(NAME);
     private Player player2 = new Player(NAME);
@@ -38,5 +38,4 @@ class PlayerTest {
         player2.setStone(STONE);
         assertEquals(STONE, player2.getStone());
     }
-
 }

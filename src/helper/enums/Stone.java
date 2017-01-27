@@ -1,10 +1,11 @@
-package helper;
+package helper.enums;
 
 import java.util.Random;
 
 /**
- * Created by mark.banierink on 16-1-2017.
  * Provides the Stones used in the game
+ *
+ * @author Mark Banierink
  */
 public enum Stone {
 
@@ -13,8 +14,7 @@ public enum Stone {
     /**
      * Method to get the Stone of the opponent
      * @param numPlayers int to know when to go to the first
-     * @return Enum of the next stone in the Enum list, EMPTY if the current stone is out of range numPlayers
-     * or Null if no match is found
+     * @return Enum of the next stone in the Enum list, EMPTY if the current stone is out of range numPlayers or if no match is found
      */
     public Stone nextStone(int numPlayers) {
         int i = 0;
@@ -22,14 +22,15 @@ public enum Stone {
             if (this == stone) {
                 if (i == numPlayers) {
                     i = 0;
-                } else if (i > numPlayers) {
+                }
+                else if (i > numPlayers) {
                     i = -1;
                 }
-                return Stone.values()[i+1];
+                return Stone.values()[i + 1];
             }
             i++;
         }
-        return null;
+        return EMPTY;
     }
 
     /**
