@@ -379,6 +379,7 @@ public class ComToolbox {
     public static String[] validArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 4 && equalsKeyword(split[0], VALID) && isStone(split[1]) && isInteger(split[2]) && isInteger(split[3])) {
+            split[1] = split[1].toUpperCase();
             return split;
         }
         return null;
@@ -401,6 +402,7 @@ public class ComToolbox {
     public static String[] invalidArguments(String string) {
         String[] split = splitString(string);
         if (split.length >= 2 && equalsKeyword(split[0], INVALID) && isStone(split[1])) {
+            split[1] = split[1].toUpperCase();
             return split;
         }
         return null;

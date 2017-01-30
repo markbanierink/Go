@@ -1,11 +1,13 @@
 package game;
 
 import com.nedap.go.gui.GoGUIIntegrator;
+import helper.enums.Keyword;
 import helper.enums.Stone;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +22,8 @@ import static helper.enums.Strings.*;
  */
 public class Game {
 
+    private static final int EARLY_ENDING_SCORE = -1;
+
     private List<Player> players = new ArrayList<>();
     private Board board;
     private Stone turn = BLACK;
@@ -28,15 +32,20 @@ public class Game {
     private List<Board> boardHistory = new ArrayList<>();
     private static GoGUIIntegrator goGui;
     private int movesPerTurn = 1;
-    private HashMap<Stone, HashSet<Integer>> chains = new HashMap<>();
+    private int playersPerGame = 2;
+    private Map<Stone, List<List<Integer>>> territories = new HashMap<>();
 
     /**
      * Constructor of the game. Calls copyBoard(getBoard()).
      * @param boardSize the size of the board on which the game is to be played
      */
-    public Game(int boardSize, int movesPerTurn) {
+    public Game(int boardSize, int movesPerTurn, int playersPerGame) {
         this.board = new Board(boardSize);
         this.movesPerTurn = movesPerTurn;
+        this.playersPerGame = playersPerGame;
+        for (int i = 1; i <= getPlayersPerGame(); i++) {
+            getTerritories().put(Stone.values()[i], new ArrayList<>());
+        }
         startGUI();
         copyBoard(getBoard());
     }
@@ -50,21 +59,6 @@ public class Game {
 
     private boolean guiIsAvailable() {
         return getGui() != null;
-    }
-
-    /**
-     * Gives the opponent of the given player
-     * @param player the player of which the opponent is to be found
-     * @return List containing Player objects that are the opponents of the given player
-     */
-    public List<Player> getOpponents(Player player) {
-        List<Player> opponents = new ArrayList<>();
-        for (Player listedPlayer : getPlayers()) {
-            if (!listedPlayer.equals(player)) {
-                opponents.add(listedPlayer);
-            }
-        }
-        return opponents;
     }
 
     private int getMovesPerTurn() {
@@ -87,26 +81,34 @@ public class Game {
         return this.turnCounter;
     }
 
-    private Stone getTurn() {
+    /**
+     * Returns the turn
+     * @return the Stone of the turn
+     */
+    public Stone getTurn() {
         return this.turn;
     }
 
-    private int coordinateToIndex(int x, int y) {
-        return (y + 1) * getBoard().getBoardSize() + x;
+    private int XYToIndex(int x, int y) {
+        return (y * getBoard().getBoardSize() + 1) + x;
     }
 
     private int[] indexToXY(int index) {
         int x = index % getBoard().getBoardSize() - 1;
-        int y = (int)Math.floor(index / getBoard().getBoardSize()) - 1;
+        int y = (int)Math.floor((index - 1) / getBoard().getBoardSize());
         return new int[] {x, y};
     }
 
-    private HashMap<Stone, HashSet<Integer>> getChains() {
-        return this.chains;
+    private Map<Stone, List<List<Integer>>> getTerritories() {
+        return this.territories;
     }
 
-    private void addNewChain(Stone stone, HashSet<Integer> chain) {
-        getChains().put(stone, chain);
+    private boolean hasChains(Stone stone) {
+        return getChains(stone) != null;
+    }
+
+    private List<List<Integer>> getChains(Stone stone) {
+        return getTerritories().get(stone);
     }
 
     private boolean hasFreedom(int index) {
@@ -114,7 +116,7 @@ public class Game {
     }
 
     private int degreesOfFreedom(int index) {
-        HashSet<Integer> coordinates = surroundings(index);
+        Set<Integer> coordinates = neighbours(index);
         int degrees = 0;
         for (Integer coordinate : coordinates) {
             int[] xy = indexToXY(coordinate);
@@ -129,54 +131,76 @@ public class Game {
         return getBoard().getField(indexToXY(index)[0], indexToXY(index)[1]);
     }
 
-    private HashSet<Integer> increaseChain(int index, HashSet<Integer> chain) {
-        for (Integer coordinate : surroundings(index)) {
-            if (getStone(coordinate) != null && getStone(coordinate).equals(getStone(index)) && !chain.contains(coordinate)) {
-                chain.add(coordinate);
-                chain = increaseChain(coordinate, chain);
-            }
-        }
-        return chain;
-    }
-
-    private void findChains() {
-        int boardSize = getBoard().getBoardSize()*getBoard().getBoardSize();
-        for (int i = 1; i < boardSize; i++) {
-            HashSet<Integer> chain = increaseChain(i, new HashSet<>());
-            if (chain.size() > 0) {
-                addNewChain(getStone(i), chain);
-            }
-        }
-    }
-
-    private HashSet<Integer> surroundings(int index) {
+    private Set<Integer> neighbours(int index) {
         int boardSize = getBoard().getBoardSize();
         int[] pos = indexToXY(index);
         int[] coordinates = {pos[0] + 1, pos[1], pos[0] - 1, pos[1], pos[0], pos[1] + 1, pos[0], pos[1] - 1};
-        HashSet<Integer> indices = new HashSet<>();
-        for (int i = 0; i < coordinates.length; i++) {
-            if (coordinates[i*2] >= 0 && coordinates[i*2] < boardSize && coordinates[i*2+1] >= 0 && coordinates[i*2+1] < boardSize) {
-                indices.add(coordinateToIndex(coordinates[i*2], coordinates[i*2+1]));
+        Set<Integer> indices = new HashSet<>();
+        for (int i = 0; i < coordinates.length; i += 2) {
+            if (coordinates[i] >= 0 && coordinates[i] < boardSize && coordinates[i + 1] >= 0 && coordinates[i + 1] < boardSize) {
+                indices.add(XYToIndex(coordinates[i], coordinates[i + 1]));
             }
         }
         return indices;
     }
 
-    private void captureFields(HashSet<Integer> chain) {
-        for (Integer index : chain) {
-            captureField(index);
+    private List<Integer> newChain(int index) {
+        List<Integer> chain = new ArrayList<>();
+        chain.add(index);
+        return chain;
+    }
+
+    private void addNewChain(Stone stone, List<Integer> chain) {
+        getChains(stone).add(chain);
+    }
+
+    private void mergeChains(Stone stone, int index) {
+        List<Integer> newChain = newChain(index);
+        addNewChain(stone, newChain);
+        for (int neighbourIndex : neighbours(index)) {
+            Iterator<List<Integer>> iterator = getChains(stone).iterator();
+            while (iterator.hasNext()) {
+                List<Integer> chain = iterator.next();
+                if (chain.contains(neighbourIndex) && chain != newChain) {
+                    if (newChain.addAll(chain)) {
+                        iterator.remove();
+                    }
+                }
+            }
         }
     }
 
-    private void captureField(int index) {
-        removeStone(indexToXY(index)[0], indexToXY(index)[1]);
+    private void updateGame(Stone stone, int x, int y) {
+        mergeChains(stone, XYToIndex(x, y));
+        updateOpponents(stone);
     }
 
-    private boolean hasDegreesOfFreedom(HashSet<Integer> chain) {
+    private void updateOpponents(Stone stone) {
+        for (Stone opponentsStone : getTerritories().keySet()) {
+            if (!opponentsStone.equals(stone) && hasChains(stone)) {
+                Iterator<List<Integer>> iterator = getChains(opponentsStone).iterator();
+                while (iterator.hasNext()) {
+                    List<Integer> chain = iterator.next();
+                    if (!hasDegreesOfFreedom(chain)) {
+                        iterator.remove();
+                        captureChain(chain);
+                    }
+                }
+            }
+        }
+    }
+
+    private void captureChain(List<Integer> chain) {
+        for (Integer index : chain) {
+            removeStone(indexToXY(index)[0], indexToXY(index)[1]);
+        }
+    }
+
+    private boolean hasDegreesOfFreedom(List<Integer> chain) {
         return chainDegreesOfFreedom(chain) > 0;
     }
 
-    private int chainDegreesOfFreedom(HashSet<Integer> chain) {
+    private int chainDegreesOfFreedom(List<Integer> chain) {
         int degrees = 0;
         for (Integer index : chain) {
             if (hasFreedom(index)) {
@@ -198,8 +222,8 @@ public class Game {
      * Determines the maximum amount of players, based on the amount of available stones
      * @return int with the max amount of players
      */
-    public int maxPlayers() {
-        return Stone.values().length - 1;
+    private int getPlayersPerGame() {
+        return this.playersPerGame;
     }
 
     private int numPlayers() {
@@ -207,7 +231,7 @@ public class Game {
     }
 
     private GoGUIIntegrator getGui() {
-        return this.goGui;
+        return goGui;
     }
 
     private boolean isTurn(Stone stone) {
@@ -219,18 +243,27 @@ public class Game {
     }
 
     /**
-     * Adds a player to the list of players and assigns a free Stone to it
+     * Adds a player to the list of players and assigns a given Stone to it
+     * @param player to add
+     * @param stone to assign to the player
+     */
+    public void addPlayer(Player player, Stone stone) {
+        player.setStone(stone);
+        this.players.add(player);
+    }
+
+    /**
+     * Adds a player to the list of players and assigns a random free Stone to it
      * @param player to add
      */
     public void addPlayer(Player player) {
-        this.players.add(player);
-        player.setStone(getFreeStone());
+        addPlayer(player, getFreeStone());
     }
 
     private Stone getFreeStone() {
-        Stone stone = randomStone(numPlayers());
+        Stone stone = randomStone(getPlayersPerGame());
         while (getPlayerByStone(stone) != null) {
-            stone = stone.nextStone(numPlayers());
+            stone = stone.nextStone(getPlayersPerGame());
         }
         return stone;
     }
@@ -250,7 +283,7 @@ public class Game {
      */
     public Player getPlayerByStone(Stone stone) {
         for (Player listedPlayer : getPlayers()) {
-            if (listedPlayer.getStone() == stone) {
+            if (listedPlayer.getStone().equals(stone)) {
                 return listedPlayer;
             }
         }
@@ -267,7 +300,6 @@ public class Game {
 
     private void placeStone(int x, int y, Stone stone) {
         getBoard().setField(x, y, stone);
-
     }
 
     private void removeStone(int x, int y) {
@@ -287,23 +319,29 @@ public class Game {
         }
         increasePassCounter();
         if (isFinished()) {
-            return END + scoreString();
+            return scoreString(null);
         }
         nextTurn();
         return "";
     }
 
     /**
-     *
+     * Returns the END command string with the TABLEFLIP-score
+     * @return END string with the TABLEFLIP-score
      */
-    public void tableFlip() {
-        // wat moet er nu gebeuren?
+    public String tableFlip() {
+        return scoreString(TABLEFLIPPED);
     }
 
-    private String scoreString() {
-        String scoreString = "";
+    private String scoreString(Keyword keyword) {
+        String scoreString = END.toString();
         for (Player player : getPlayers()) {
-            scoreString += SPACE.toString() + player.getStone() + SPACE + getScore(player.getStone());
+            if (keyword.equals(TABLEFLIPPED)) {
+                scoreString += SPACE.toString() + EARLY_ENDING_SCORE;
+            }
+            else {
+                scoreString += SPACE.toString() + getScore(player.getStone());
+            }
         }
         return scoreString;
     }
@@ -314,7 +352,6 @@ public class Game {
 
     private void increasePassCounter() {
         this.passCounter++;
-        System.out.println(passCounter);
     }
 
     private void resetPassCounter() {
@@ -326,8 +363,50 @@ public class Game {
     }
 
     private int getScore(Stone stone) {
+        int score = 0;
+        score += getStoneScore(stone);
+        score += getTerritoryScore(stone);
+        return score;
+    }
 
-        return 0;
+    private int getStoneScore(Stone stone) {
+        int stones = 0;
+        for (List<Integer> chains : getChains(stone)) {
+            stones += chains.size();
+        }
+        return stones;
+    }
+
+    private int getTerritoryScore(Stone stone) {
+        int boardIndexSize = getBoard().getBoardSize() * getBoard().getBoardSize();
+        List<Integer> allChainIndices = new ArrayList<>();
+        int score = 0;
+        for (int i = 1; i < boardIndexSize; i++) {
+            if (!allChainIndices.contains(i)) {
+                List<Integer> chain = increaseChain(i, new ArrayList<>(), stone);
+                if (chain != null && chain.size() > 0) {
+                    score += chain.size();
+                    allChainIndices.addAll(chain);
+                }
+            }
+        }
+        return score;
+    }
+
+    private List<Integer> increaseChain(int index, List<Integer> chain, Stone stone) {
+        for (Integer coordinate : neighbours(index)) {
+            if (!getStone(coordinate).equals(EMPTY) && !getStone(coordinate).equals(stone)) {
+                return null;
+            }
+            else if (getStone(coordinate).equals(EMPTY) && !chain.contains(coordinate)) {
+                chain.add(coordinate);
+                chain = increaseChain(coordinate, chain, stone);
+                if (chain == null) {
+                    return null;
+                }
+            }
+        }
+        return chain;
     }
 
     /**
@@ -339,10 +418,11 @@ public class Game {
     public void move(Stone stone, int x, int y) {
         placeStone(x, y, stone);
         resetPassCounter();
-        nextTurn();
         if (guiIsAvailable()) {
             getGui().addStone(x, y, stone2bool(stone));
         }
+        updateGame(stone, x, y);
+        nextTurn();
     }
 
     /**

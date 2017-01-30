@@ -31,8 +31,8 @@ public class Server implements ServerClientInterface {
     private static final int MIN_PLAYERS_PER_GAME = 2;
     private static final int[] MOVES_PER_TURN_RANGE = {1, 5};
 
-    private HashMap<ClientHandler, Date> clientHandlers = new HashMap<>();
-    private HashMap<Player, ClientHandler> playersList = new HashMap<>();
+    private Map<ClientHandler, Date> clientHandlers = new HashMap<>();
+    private Map<Player, ClientHandler> playersList = new HashMap<>();
     private List<Game> gamesList = new ArrayList<>();
     private boolean serverLoop = true;
     private ConsoleReader consoleReader;
@@ -170,7 +170,11 @@ public class Server implements ServerClientInterface {
         return getPlayer(clientHandler) != null;
     }
 
-    private HashMap<ClientHandler, Date> getClientHandlers() {
+    private boolean hasClientHandler(Player player) {
+        return getClientHandler(player) != null;
+    }
+
+    private Map<ClientHandler, Date> getClientHandlers() {
         return this.clientHandlers;
     }
 
@@ -192,7 +196,7 @@ public class Server implements ServerClientInterface {
         printOutput("ClientHandler removed");
     }
 
-    private HashMap<Player, ClientHandler> getPlayersList() {
+    private Map<Player, ClientHandler> getPlayersList() {
         return this.playersList;
     }
 
@@ -228,13 +232,32 @@ public class Server implements ServerClientInterface {
         game.removePlayer(player);
         printOutput("Player removed from Game " + getGameNumber(game));
         if (isEmptyGame(game)) {
-            deleteGame(getGame(player));
+            removeGame(getGame(player));
         }
     }
 
     private synchronized void removeListedGame(Game game) {
-        getGamesList().remove(game);
         printOutput("Game " + getGameNumber(game) + " removed");
+        getGamesList().remove(game);
+    }
+
+    private synchronized void listGame(Game game) {
+        getGamesList().add(game);
+        printOutput("Game " + getGameNumber(game) + " listed");
+    }
+
+    private Game createGame(int boardSize) {
+        Game game = new Game(boardSize, getMovesPerTurn(), getPlayersPerGame());
+        listGame(game);
+        return game;
+    }
+
+    private void removeGame(Game game) {
+        broadcastGame(game, "This game is removed", null);
+        removeListedGame(game);
+//        for (Player player : game.getPlayers()) {
+//            removeGamePlayer(game, player);
+//        }
     }
 
     private void checkGameToStart(Game game) {
@@ -275,30 +298,6 @@ public class Server implements ServerClientInterface {
         return getPlayersList().size();
     }
 
-    private synchronized void listGame(Game game) {
-        getGamesList().add(game);
-        printOutput("Game " + getGameNumber(game) + " listed");
-    }
-
-    private Game createGame(int boardSize) {
-        Game game = new Game(boardSize, getMovesPerTurn());
-        listGame(game);
-        return game;
-    }
-
-    private void deletePlayer(Player player) {
-        removeListedPlayer(player);
-        getGame(player).removePlayer(player);
-    }
-
-    private void deleteGame(Game game) {
-        broadcastGame(game, "This game is removed", null);
-        for (Player player : game.getPlayers()) {
-            removeGamePlayer(game, player);
-        }
-        removeListedGame(game);
-    }
-
     private void broadcastClient(ClientHandler clientHandler, String message) {
         handleClientOutput(clientHandler, message);
     }
@@ -310,7 +309,9 @@ public class Server implements ServerClientInterface {
     private void broadcastGame(Game game, String message, Player excludedPlayer) {
         for (Player player : game.getPlayers()) {
             if (!player.equals(excludedPlayer)) {
-                broadcastPlayer(player, message);
+                if (hasClientHandler(player)) {
+                    broadcastPlayer(player, message);
+                }
             }
         }
     }
@@ -375,7 +376,7 @@ public class Server implements ServerClientInterface {
                         commandCancel(game, player);
                     }
                     else {
-                        noCommand(clientHandler);
+                        noCommand(clientHandler, string);
                     }
                 }
                 else if (isMoveCommand(string)) {
@@ -388,18 +389,18 @@ public class Server implements ServerClientInterface {
                     commandTableFlip(game, player);
                 }
                 else {
-                    noCommand(clientHandler);
+                    noCommand(clientHandler, string);
                 }
             }
             else {
-                noCommand(clientHandler);
+                noCommand(clientHandler, string);
             }
         }
         else if (isChatCommand(string)) {
             commandChat(clientHandler, chatArguments(string));
         }
         else {
-            noCommand(clientHandler);
+            noCommand(clientHandler, string);
         }
     }
 
@@ -466,11 +467,18 @@ public class Server implements ServerClientInterface {
             String response = game.pass();
             if (response.equals("")) {
                 broadcastGame(game, createCommandPassed(player.getStone()), null);
-                game.pass();
+                String message;
+                if (isEndCommand(message = game.pass())) {
+                    broadcastGame(game, message, null);
+                    removeGame(game);
+                }
             }
             else {
                 kickClient(getClientHandler(player), createCommandInvalid(player.getStone(), response));
             }
+        }
+        else {
+            kickClient(getClientHandler(player), createCommandInvalid(player.getStone(), NOT_TURN.toString()));
         }
     }
 
@@ -493,8 +501,8 @@ public class Server implements ServerClientInterface {
         }
     }
 
-    private void noCommand(ClientHandler clientHandler) {
-        handleClientOutput(clientHandler, WARNING.toString() + SPACE + UNKNOWN_KEYWORD);
+    private void noCommand(ClientHandler clientHandler, String string) {
+        handleClientOutput(clientHandler, createCommandWarning(string));
     }
 
     private void kickClient(ClientHandler clientHandler, String reason) {

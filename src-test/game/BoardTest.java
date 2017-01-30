@@ -12,12 +12,13 @@ public class BoardTest {
 
     private final static int BOARD_SIZE = 5;
     private final static int MOVES_PER_TURN = 1;
+    private final static int PLAYERS_PER_GAME = 2;
 
     private Board board1 = new Board(BOARD_SIZE);
     private Board board2 = new Board(BOARD_SIZE);
     private Board board3 = new Board(BOARD_SIZE);
     private Board board4 = new Board(BOARD_SIZE + 1);
-    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN);
+    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME);
 
     @BeforeEach
     void setUp() {

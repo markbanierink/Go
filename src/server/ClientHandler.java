@@ -37,12 +37,10 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleClientInput(String string) {
-        System.out.println(string);                                                                           // TEMPORARY!!!
         getServer().handleClientInput(this, string);
     }
 
     protected void handleClientOutput(String string) {
-        System.out.println(string);                                                                           // TEMPORARY!!!
         writeString(string);
     }
 

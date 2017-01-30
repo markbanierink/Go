@@ -4,6 +4,7 @@ import game.*;
 import helper.*;
 
 import helper.enums.Stone;
+import helper.enums.Strings;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -45,8 +46,7 @@ public class Client implements ServerClientInterface {
         printOutput("Connecting to socket");
         this.socket = getSocket(inetAddress, port);
         printOutput("Connected to socket");
-        Thread socketReader = new Thread(new SocketReader(this.socket, this), "SocketReader");
-        socketReader.start();
+        (new Thread(new SocketReader(this.socket, this), "SocketReader")).start();
         this.serverInput = createSocketWriter(this.socket);
         startNewPlayer();
         startNewGame();
@@ -72,15 +72,21 @@ public class Client implements ServerClientInterface {
     }
 
     private Player createPlayer() {
-        return new Player(requestStringInput(consoleReader, "What is your name", null));
+        Player player = new Player(requestStringInput(consoleReader, "What is your name", null));
+        setPlayer(player);
+        return player;
+    }
+
+    private void setPlayer(Player player) {
+        this.player = player;
     }
 
     private Player getPlayer() {
         return this.player;
     }
 
-    private void createGame(int boardSize, int movesPerTurn) {
-        this.game = new Game(boardSize, movesPerTurn);
+    private void createGame(int boardSize, int movesPerTurn, int playersPerGame) {
+        this.game = new Game(boardSize, movesPerTurn, playersPerGame);
     }
 
     private Game getGame() {
@@ -167,15 +173,23 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandWaiting(String string) {
-        printOutput(WAITING_FOR_OPPONENT.toString());
+        printOutput(WAITING_FOR_OPPONENT);
     }
 
     private void commandReady(String[] arguments) {
-        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN);
+        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN, arguments.length-4);
         for (int i = 2; i < arguments.length; i += 2) {
-            Player player = new Player(arguments[i + 1]);
-            player.setStone(Stone.valueOf(arguments[i].toUpperCase()));
-            getGame().addPlayer(player);
+            Player player;
+            if (!getPlayer().getName().equals(arguments[i + 1])) {
+                player = new Player(arguments[i + 1]);
+            }
+            else {
+                player = getPlayer();
+            }
+            getGame().addPlayer(player, Stone.valueOf(arguments[i].toUpperCase()));
+        }
+        if (getPlayer().getStone().equals(getGame().getTurn())) {
+            printOutput(YOUR_TURN);
         }
     }
 
@@ -184,9 +198,12 @@ public class Client implements ServerClientInterface {
         if (response.equals(VALID.toString())) {
             getGame().move(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
             printOutput("Move by " + getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + ": " + arguments[2] + ", " + arguments[3]);
+            if (getPlayer().getStone().equals(getGame().getTurn())) {
+                printOutput(YOUR_TURN);
+            }
         }
         else {
-            printOutput(SERVER_CLIENT_MISMATCH.toString());
+            printOutput(SERVER_CLIENT_MISMATCH);
         }
     }
 
@@ -201,7 +218,7 @@ public class Client implements ServerClientInterface {
             printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
         }
         else {
-            printOutput(SERVER_CLIENT_MISMATCH.toString());
+            printOutput(SERVER_CLIENT_MISMATCH);
         }
     }
 
@@ -211,7 +228,7 @@ public class Client implements ServerClientInterface {
             printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " tableflipped");
         }
         else {
-            printOutput(SERVER_CLIENT_MISMATCH.toString());
+            printOutput(SERVER_CLIENT_MISMATCH);
         }
     }
 
@@ -224,19 +241,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandEnd(String[] arguments) {
-        int max = 1;
-        String result;
-        for (int i = 2; i < arguments.length; i++) {
-            if (Integer.parseInt(arguments[i]) >= Integer.parseInt(arguments[max])) {
-                max = Integer.parseInt(arguments[i]);
-            }
-        }
-        if (Stone.values()[max].equals(getPlayer().getStone())) {
-            result = "the winner";
-        }
-        else {
-            result = "a loser";
-        }
+        String result = determineWinner(arguments);
         String outputMessage = "You are " + result + " with " + arguments[1];
         for (int j = 2; j < arguments.length; j++) {
             outputMessage += " to " + arguments[j];
@@ -245,9 +250,28 @@ public class Client implements ServerClientInterface {
         startNewGame();
     }
 
+    private String determineWinner(String[] arguments) {
+        int max = 1;
+        String result;
+        for (int i = 1; i < arguments.length; i++) {
+            if (Integer.parseInt(arguments[i]) >= Integer.parseInt(arguments[max])) {
+                max = Integer.parseInt(arguments[i]);
+            }
+        }
+        if (Integer.parseInt(arguments[1]) == -1) {
+            result = "a winner due to premature leaving of an opponent";
+        }
+        else if (Stone.values()[max].equals(getPlayer().getStone())) {
+            result = "the winner";
+        }
+        else {
+            result = "a loser";
+        }
+        return result;
+    }
+
     private void noCommand(String string) {
-        System.out.println("Client warning");
-        printOutput(WARNING.toString() + SPACE + UNKNOWN_KEYWORD + SPACE + ": " + string);
+        printOutput(createCommandWarning(string));
     }
 
     public void handleConsoleInput(String string) {
@@ -262,6 +286,9 @@ public class Client implements ServerClientInterface {
         }
         else if (isChatCommand(string)) {
             handleServerInput(string);
+        }
+        else {
+            noCommand(string);
         }
     }
 
@@ -285,6 +312,10 @@ public class Client implements ServerClientInterface {
         catch (IOException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    private void printOutput(Strings string) {
+        printOutput(string.toString());
     }
 
     private void printOutput(String string) {

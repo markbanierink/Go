@@ -23,6 +23,7 @@ public enum Strings {
     SERVER_CLIENT_MISMATCH("There is mismatch between Server and Client implementation"),
     SERVER("Server"),
     PERFORMED_TABLEFLIP("flipped the table"),
+    YOUR_TURN("It is your turn"),
     NAME_TAKEN("Name is already taken, please retry");
 
     private final String string;

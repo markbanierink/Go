@@ -2,6 +2,8 @@ package game;
 
 import helper.enums.Stone;
 
+import static helper.enums.Stone.*;
+
 /**
  * Player of the game. Used by both Server and Client
  *
@@ -18,6 +20,7 @@ public class Player {
      */
     public Player(String name) {
         this.name = name;
+        this.stone = EMPTY;
     }
 
     public String getName() {
