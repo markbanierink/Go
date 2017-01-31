@@ -9,32 +9,14 @@ import java.io.*;
 public class ConsoleReader implements Runnable {
 
     private ServerClientInterface serverClientInterface = null;
-    private boolean paused;
 
     public ConsoleReader(ServerClientInterface serverClientInterface) {
         this.serverClientInterface = serverClientInterface;
-        this.paused = false;
-    }
-
-    public boolean isPaused() {
-        return this.paused;
-    }
-
-    public void setPaused(boolean pausedSetting) {
-        this.paused = pausedSetting;
     }
 
     public void run() {
         String line;
         while ((line = readString("")) != null) {
-            if (isPaused()) {
-                try {
-                    wait();
-                }
-                catch (InterruptedException e) {
-                    System.out.println(e.getMessage());
-                }
-            }
             getServerClient().handleConsoleInput(line);
         }
         System.out.println("ConsoleReader finished");
@@ -44,7 +26,7 @@ public class ConsoleReader implements Runnable {
         return this.serverClientInterface;
     }
 
-    public String readString(String string) {
+    protected String readString(String string) {
         String line = null;
         try {
             System.out.print(string);

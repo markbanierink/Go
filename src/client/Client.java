@@ -34,7 +34,7 @@ public class Client implements ServerClientInterface {
     private BufferedWriter serverInput;
     private Player player;
     private Game game;
-    private boolean requestPlaced = false;
+    private Thread socketReader;
 
     /**
      * The constructor can be called from the subclasses. No parameters or environmental variables are required
@@ -47,7 +47,9 @@ public class Client implements ServerClientInterface {
         printOutput("Connecting to socket");
         this.socket = getSocket(inetAddress, port);
         printOutput("Connected to socket");
-        (new Thread(new SocketReader(this.socket, this), "SocketReader")).start();
+        socketReader = new Thread(new SocketReader(this.socket, this), "SocketReader");
+        socketReader.start();
+
         this.serverInput = createSocketWriter(this.socket);
         startNewPlayer();
         startNewGame();
@@ -76,14 +78,6 @@ public class Client implements ServerClientInterface {
         Player player = new Player(requestStringInput(consoleReader, "What is your name", null));
         setPlayer(player);
         return player;
-    }
-
-    private void setRequestPlaced() {
-        this.requestPlaced = true;
-    }
-
-    private boolean getRequestPlaced() {
-        return this.requestPlaced;
     }
 
     private void setPlayer(Player player) {
@@ -151,7 +145,7 @@ public class Client implements ServerClientInterface {
 
     protected void handleServerOutput(String string) {
         if (isWaitingCommand(string)) {
-            commandWaiting(string);
+            commandWaiting();
         }
         else if (isReadyCommand(string)) {
             commandReady(readyArguments(string));
@@ -182,7 +176,7 @@ public class Client implements ServerClientInterface {
         }
     }
 
-    private void commandWaiting(String string) {
+    private void commandWaiting() {
         printOutput(WAITING_FOR_OPPONENT);
     }
 

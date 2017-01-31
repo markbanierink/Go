@@ -4,6 +4,8 @@ import static helper.ComToolbox.*;
 
 /**
  * Created by mark.banierink on 25-1-2017.
+ *
+ * @author Mark Banierink
  */
 public class ConsoleToolbox {
 
@@ -22,7 +24,6 @@ public class ConsoleToolbox {
     }
 
     public static boolean requestBooleanInput(ConsoleReader consoleReader, String request, String defaultValue) {
-        consoleReader.setPaused(true);
         boolean result = false;
         boolean answered = false;
         String defaultString = "";
@@ -44,15 +45,15 @@ public class ConsoleToolbox {
                 else if (defaultValue.equals("n")) {
                     result = false;
                 }
+                answered = true;
             }
-            answered = true;
+
         }
-        consoleReader.setPaused(false);
-        EXTRA FOUT VOOR HERINNERING consoleReader.notify();
         return result;
     }
 
     public static String requestStringInput(ConsoleReader consoleReader, String request, String defaultValue) {
+        String result;
         String defaultString = "";
         if (defaultValue != null) {
             defaultString = " (default \'" + defaultValue + "\')";
@@ -60,11 +61,14 @@ public class ConsoleToolbox {
         while (true) {
             String answer = consoleReader.readString(request + defaultString + ": ");
             if (!answer.isEmpty()) {
-                return answer;
+                result = answer;
+                break;
             }
             else if (defaultValue != null) {
-                return defaultValue;
+                result = defaultValue;
+                break;
             }
         }
+        return result;
     }
 }

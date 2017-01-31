@@ -38,17 +38,22 @@ public class GameTest {
     }
 
     @Test
+    void testGetTurn() {
+
+    }
+
+    @Test
     void testGetPlayers() {
 
     }
 
     @Test
-    void testMaxPlayers() {
+    void testAddPlayer() {
 
     }
 
     @Test
-    void testAddPlayer() {
+    void testAddPlayer1() {
 
     }
 
@@ -68,7 +73,12 @@ public class GameTest {
     }
 
     @Test
-    void testTableFlip() {
+    void tableFlip() {
+
+    }
+
+    @Test
+    void testIsFinished() {
 
     }
 
@@ -83,7 +93,12 @@ public class GameTest {
     }
 
     @Test
-    void testIsValidTableFlip() {
+    void testIsValidTableflip() {
+
+    }
+
+    @Test
+    void testIsValidMove() {
 
     }
 
