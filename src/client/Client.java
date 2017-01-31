@@ -34,6 +34,7 @@ public class Client implements ServerClientInterface {
     private BufferedWriter serverInput;
     private Player player;
     private Game game;
+    private boolean requestPlaced = false;
 
     /**
      * The constructor can be called from the subclasses. No parameters or environmental variables are required
@@ -77,6 +78,14 @@ public class Client implements ServerClientInterface {
         return player;
     }
 
+    private void setRequestPlaced() {
+        this.requestPlaced = true;
+    }
+
+    private boolean getRequestPlaced() {
+        return this.requestPlaced;
+    }
+
     private void setPlayer(Player player) {
         this.player = player;
     }
@@ -98,6 +107,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void startNewGame() {
+        this.game = null;
         if (requestBooleanInput(consoleReader, "Do you want to start a new game", "y")) {
             handleServerInput(createCommandGo(requestBoardSize()));
         }
@@ -216,6 +226,9 @@ public class Client implements ServerClientInterface {
         if (getGame().isValidPass(Stone.valueOf(arguments[1]))) {
             getGame().pass();
             printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
+            if (getPlayer().getStone().equals(getGame().getTurn()) && !getGame().isFinished()) {
+                printOutput(YOUR_TURN);
+            }
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH);
@@ -223,7 +236,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandTableFlipped(String[] arguments) {
-        if (getGame().isValidTableflip(Stone.valueOf(arguments[1]))) {
+        if (getGame().isValidTableflip(Stone.valueOf(arguments[1].toUpperCase()))) {
             getGame().tableFlip();
             printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " tableflipped");
         }
@@ -233,7 +246,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandChat(String[] arguments) {
-        printOutput("Chat message: " + arguments[1]);
+        printOutput(arguments[1]);
     }
 
     private void commandWarning(String[] arguments) {
@@ -242,7 +255,7 @@ public class Client implements ServerClientInterface {
 
     private void commandEnd(String[] arguments) {
         String result = determineWinner(arguments);
-        String outputMessage = "You are " + result + " with " + arguments[1];
+        String outputMessage = result + " with " + arguments[1];
         for (int j = 2; j < arguments.length; j++) {
             outputMessage += " to " + arguments[j];
         }
@@ -252,20 +265,30 @@ public class Client implements ServerClientInterface {
 
     private String determineWinner(String[] arguments) {
         int max = 1;
+        boolean draw = true;
         String result;
         for (int i = 1; i < arguments.length; i++) {
-            if (Integer.parseInt(arguments[i]) >= Integer.parseInt(arguments[max])) {
-                max = Integer.parseInt(arguments[i]);
+            if (Integer.parseInt(arguments[i]) > Integer.parseInt(arguments[max])) {
+                draw = false;
+                max = i;
+            }
+            else if (Integer.parseInt(arguments[i]) < Integer.parseInt(arguments[max])) {
+                draw = false;
             }
         }
-        if (Integer.parseInt(arguments[1]) == -1) {
-            result = "a winner due to premature leaving of an opponent";
+        if (draw) {
+            if (Integer.parseInt(arguments[1]) == -1) {
+                result = "Winner due to premature leaving of your opponent";
+            }
+            else {
+                result = "Draw..";
+            }
         }
         else if (Stone.values()[max].equals(getPlayer().getStone())) {
-            result = "the winner";
+            result = "WINNER!!!";
         }
         else {
-            result = "a loser";
+            result = "Loser..";
         }
         return result;
     }

@@ -1,9 +1,9 @@
 package game;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static helper.enums.Stone.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by mark.banierink on 21-1-2017.
@@ -16,13 +16,14 @@ public class GameTest {
     private static final int MOVES_PER_TURN = 1;
     private static final int PLAYERS_PER_GAME = 2;
     private Game game;
+    private Player player1 = new Player("Mark");
+    private Player player2 = new Player("Piet");
+    private Player player3 = new Player("Joop");
+    private Board board = new Board(BOARD_SIZE);
 
     @BeforeEach
     void setUp() {
         this.game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME);
-        Player player1 = new Player("Mark");
-        Player player2 = new Player("Piet");
-        Player player3 = new Player("Joop");
         player1.setStone(BLACK);
         player2.setStone(WHITE);
         player3.setStone(RED);
@@ -32,18 +33,8 @@ public class GameTest {
     }
 
     @Test
-    void testGo() {
-
-    }
-
-    @Test
-    void testGetOpponents() {
-
-    }
-
-    @Test
     void testGetBoard() {
-
+        assertEquals(board, game.getBoard());
     }
 
     @Test

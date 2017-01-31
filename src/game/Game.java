@@ -52,7 +52,7 @@ public class Game {
 
     private void startGUI() {
         if (!guiIsAvailable()) {
-            goGui = new GoGUIIntegrator(true, true, getBoard().getBoardSize());
+            goGui = new GoGUIIntegrator(false, true, getBoard().getBoardSize());
             getGui().startGUI();
         }
     }
@@ -94,7 +94,7 @@ public class Game {
     }
 
     private int[] indexToXY(int index) {
-        int x = index % getBoard().getBoardSize() - 1;
+        int x = (index - 1) % getBoard().getBoardSize();
         int y = (int)Math.floor((index - 1) / getBoard().getBoardSize());
         return new int[] {x, y};
     }
@@ -134,7 +134,7 @@ public class Game {
     private Set<Integer> neighbours(int index) {
         int boardSize = getBoard().getBoardSize();
         int[] pos = indexToXY(index);
-        int[] coordinates = {pos[0] + 1, pos[1], pos[0] - 1, pos[1], pos[0], pos[1] + 1, pos[0], pos[1] - 1};
+        int[] coordinates = {pos[0], pos[1] - 1, pos[0] + 1, pos[1], pos[0], pos[1] + 1, pos[0] - 1, pos[1]};
         Set<Integer> indices = new HashSet<>();
         for (int i = 0; i < coordinates.length; i += 2) {
             if (coordinates[i] >= 0 && coordinates[i] < boardSize && coordinates[i + 1] >= 0 && coordinates[i + 1] < boardSize) {
@@ -335,18 +335,24 @@ public class Game {
 
     private String scoreString(Keyword keyword) {
         String scoreString = END.toString();
-        for (Player player : getPlayers()) {
-            if (keyword.equals(TABLEFLIPPED)) {
-                scoreString += SPACE.toString() + EARLY_ENDING_SCORE;
+        int i = 0;
+        int stoneIndex = 0;
+        for (Stone stone : Stone.values()) {
+            if (i > stoneIndex && i <= numPlayers()) {
+                Player player = getPlayerByStone(stone);
+                if (keyword != null && keyword.equals(TABLEFLIPPED)) {
+                    scoreString += SPACE.toString() + EARLY_ENDING_SCORE;
+                }
+                else {
+                    scoreString += SPACE.toString() + getScore(player.getStone());
+                }
             }
-            else {
-                scoreString += SPACE.toString() + getScore(player.getStone());
-            }
+            i++;
         }
         return scoreString;
     }
 
-    private boolean isFinished() {
+    public boolean isFinished() {
         return getPassCounter() == numPlayers();
     }
 
@@ -379,11 +385,13 @@ public class Game {
 
     private int getTerritoryScore(Stone stone) {
         int boardIndexSize = getBoard().getBoardSize() * getBoard().getBoardSize();
-        List<Integer> allChainIndices = new ArrayList<>();
+        Set<Integer> allChainIndices = new HashSet<>();
         int score = 0;
         for (int i = 1; i < boardIndexSize; i++) {
-            if (!allChainIndices.contains(i)) {
-                List<Integer> chain = increaseChain(i, new ArrayList<>(), stone);
+            if (!allChainIndices.contains(i) && getStone(i).equals(EMPTY)) {
+                Set<Integer> chain = new HashSet<>();
+                chain.add(i);
+                chain = increaseChain(i, chain, stone);
                 if (chain != null && chain.size() > 0) {
                     score += chain.size();
                     allChainIndices.addAll(chain);
@@ -393,17 +401,14 @@ public class Game {
         return score;
     }
 
-    private List<Integer> increaseChain(int index, List<Integer> chain, Stone stone) {
+    private Set<Integer> increaseChain(int index, Set<Integer> chain, Stone stone) {
         for (Integer coordinate : neighbours(index)) {
-            if (!getStone(coordinate).equals(EMPTY) && !getStone(coordinate).equals(stone)) {
+            if ((!getStone(coordinate).equals(EMPTY) && !getStone(coordinate).equals(stone)) || chain.contains(coordinate)) {
                 return null;
             }
-            else if (getStone(coordinate).equals(EMPTY) && !chain.contains(coordinate)) {
+            else if (getStone(coordinate).equals(EMPTY)) {
                 chain.add(coordinate);
-                chain = increaseChain(coordinate, chain, stone);
-                if (chain == null) {
-                    return null;
-                }
+                return increaseChain(coordinate, chain, stone);
             }
         }
         return chain;
@@ -436,12 +441,10 @@ public class Game {
 
     /**
      * Checks if a Tableflip command is valid
-     * @param stone Stone of the player requesting
      * @return true if the Stone may Tableflip, false if it may not
      */
     public boolean isValidTableflip(Stone stone) {
-        return true;
-        //return isTurn(stone);                                                     // TABLEFLIP is always allowed
+        return isTurn(stone);
     }
 
     public boolean isValidMove(Stone stone, int x, int y) {

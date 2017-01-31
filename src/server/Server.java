@@ -5,6 +5,7 @@ import helper.*;
 
 import helper.enums.Stone;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -124,6 +125,7 @@ public class Server implements ServerClientInterface {
         int port = getPortNumber();
         while (true) {
             try {
+                printOutput("Local IP address: " + InetAddress.getLocalHost().getHostAddress());
                 return new ServerSocket(port);
             }
             catch (IOException e) {
@@ -229,10 +231,12 @@ public class Server implements ServerClientInterface {
     }
 
     private void removeGamePlayer(Game game, Player player) {
-        game.removePlayer(player);
-        printOutput("Player removed from Game " + getGameNumber(game));
-        if (isEmptyGame(game)) {
+        if (hasOnePlayer(game)) {
             removeGame(getGame(player));
+        }
+        else {
+            game.removePlayer(player);
+            printOutput("Player removed from Game " + getGameNumber(game));
         }
     }
 
@@ -255,9 +259,9 @@ public class Server implements ServerClientInterface {
     private void removeGame(Game game) {
         broadcastGame(game, "This game is removed", null);
         removeListedGame(game);
-//        for (Player player : game.getPlayers()) {
-//            removeGamePlayer(game, player);
-//        }
+        //        for (Player player : game.getPlayers()) {
+        //            removeGamePlayer(game, player);
+        //        }
     }
 
     private void checkGameToStart(Game game) {
@@ -275,8 +279,8 @@ public class Server implements ServerClientInterface {
         return game.getPlayers().size() == getPlayersPerGame();
     }
 
-    private boolean isEmptyGame(Game game) {
-        return game.getPlayers().size() == 0;
+    private boolean hasOnePlayer(Game game) {
+        return game.getPlayers().size() == 1;
     }
 
     private boolean isGameAvailable(int boardSize) {
@@ -388,7 +392,11 @@ public class Server implements ServerClientInterface {
                 else if (isTableFlipCommand(string)) {
                     commandTableFlip(game, player);
                 }
+                else if (isChatCommand(string)) {
+                    commandChat(clientHandler, chatArguments(string));
+                }
                 else {
+                    System.out.println("No command 1");
                     noCommand(clientHandler, string);
                 }
             }
@@ -465,16 +473,10 @@ public class Server implements ServerClientInterface {
     private void commandPass(Game game, Player player) {
         if (game.isValidPass(player.getStone())) {
             String response = game.pass();
-            if (response.equals("")) {
-                broadcastGame(game, createCommandPassed(player.getStone()), null);
-                String message;
-                if (isEndCommand(message = game.pass())) {
-                    broadcastGame(game, message, null);
-                    removeGame(game);
-                }
-            }
-            else {
-                kickClient(getClientHandler(player), createCommandInvalid(player.getStone(), response));
+            broadcastGame(game, createCommandPassed(player.getStone()), null);
+            if (isEndCommand(response)) {
+                broadcastGame(game, response, null);
+                removeGame(game);
             }
         }
         else {

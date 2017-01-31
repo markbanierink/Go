@@ -22,27 +22,34 @@ public class ConsoleToolbox {
     }
 
     public static boolean requestBooleanInput(ConsoleReader consoleReader, String request, String defaultValue) {
+        consoleReader.setPaused(true);
+        boolean result = false;
+        boolean answered = false;
         String defaultString = "";
         if (defaultValue != null) {
             defaultString = ", default " + defaultValue;
         }
-        while (true) {
+        while (!answered) {
             String answer = consoleReader.readString(request + " (y/n" + defaultString + "): ");
             if (answer.equals("y")) {
-                return true;
+                result = true;
             }
             else if (answer.equals("n")) {
-                return false;
+                result = false;
             }
             else if (defaultValue != null) {
                 if (defaultValue.equals("y")) {
-                    return true;
+                    result = true;
                 }
                 else if (defaultValue.equals("n")) {
-                    return false;
+                    result = false;
                 }
             }
+            answered = true;
         }
+        consoleReader.setPaused(false);
+        EXTRA FOUT VOOR HERINNERING consoleReader.notify();
+        return result;
     }
 
     public static String requestStringInput(ConsoleReader consoleReader, String request, String defaultValue) {

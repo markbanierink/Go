@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by mark.banierink on 21-1-2017.
+ *
+ * @author Mark Banierink
  */
 public class BoardTest {
 
