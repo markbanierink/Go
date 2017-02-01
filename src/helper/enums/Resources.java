@@ -1,11 +1,11 @@
 package helper.enums;
 
 /**
- * Provides standardised Strings for communication
+ * Provides standardised Resources for communication
  *
  * @author Mark Banierink
  */
-public enum Strings {
+public enum Resources {
 
     SPACE(" "),
     UNKNOWN_KEYWORD("Unknown keyword or non-allowed command"),
@@ -28,12 +28,12 @@ public enum Strings {
 
     private final String string;
 
-    Strings(String string) {
+    Resources(String string) {
         this.string = string;
     }
 
     public String toString() {
-        return this.string;
+        return string;
     }
 
 }

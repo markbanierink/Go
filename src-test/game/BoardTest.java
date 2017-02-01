@@ -35,9 +35,9 @@ public class BoardTest {
 
     @Test
     void testIsField() {
-        assertTrue(board1.isField(0, 0));
-        assertFalse(board1.isField(BOARD_SIZE, BOARD_SIZE));
-        assertFalse(board1.isField(-1, -1));
+        assertTrue(board1.isValidField(0, 0));
+        assertFalse(board1.isValidField(BOARD_SIZE, BOARD_SIZE));
+        assertFalse(board1.isValidField(-1, -1));
     }
 
     @Test

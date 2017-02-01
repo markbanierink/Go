@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
     private Socket socket;
     private BufferedReader clientInput;
     private BufferedWriter clientOutput;
+    private boolean stop;
 
     /**
      * Constructor of the ClientHandler
@@ -44,6 +45,14 @@ public class ClientHandler implements Runnable {
         writeString(string);
     }
 
+    protected void setStop() {
+        this.stop = true;
+    }
+
+    private boolean stop() {
+        return this.stop;
+    }
+
     /**
      * Run method that is started as soon as ClientHandler is started in a separate thread. It reads the client input
      * and passes this through to the server
@@ -51,7 +60,7 @@ public class ClientHandler implements Runnable {
     public void run() {
         String line;
         try {
-            while ((line = clientInput.readLine()) != null) {
+            while ((line = clientInput.readLine()) != null && !stop()) {
                 handleClientInput(line);
             }
             shutDown();

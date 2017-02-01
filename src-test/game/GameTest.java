@@ -2,6 +2,7 @@ package game;
 
 import org.junit.jupiter.api.*;
 
+import static helper.enums.Keyword.*;
 import static helper.enums.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,20 +17,21 @@ public class GameTest {
     private static final int MOVES_PER_TURN = 1;
     private static final int PLAYERS_PER_GAME = 2;
     private Game game;
-    private Player player1 = new Player("Mark");
-    private Player player2 = new Player("Piet");
-    private Player player3 = new Player("Joop");
+    private Player player1;
+    private Player player2;
+    private Player player3;
     private Board board = new Board(BOARD_SIZE);
 
     @BeforeEach
     void setUp() {
         this.game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME);
+        player1 = new Player("Joop");
+        player2 = new Player("Piet");
+        player3 = new Player("Henk");
         player1.setStone(BLACK);
         player2.setStone(WHITE);
-        player3.setStone(RED);
         game.addPlayer(player1);
-        game.addPlayer(player2);
-        game.addPlayer(player3);
+        game.addPlayer(player3, YELLOW);
     }
 
     @Test
@@ -39,71 +41,101 @@ public class GameTest {
 
     @Test
     void testGetTurn() {
-
+        assertEquals(BLACK, game.getTurn());
     }
 
     @Test
     void testGetPlayers() {
-
-    }
-
-    @Test
-    void testAddPlayer() {
-
+        assertEquals(player1, game.getPlayers().get(0));
+        assertEquals(player3, game.getPlayers().get(1));
     }
 
     @Test
     void testAddPlayer1() {
+        assertEquals(2, game.getPlayers().size());
+        assertTrue(game.getPlayers().get(1).getStone().equals(YELLOW));
+    }
 
+    @Test
+    void testAddPlayer2() {
+        assertTrue(game.getPlayers().get(0).getStone() != null);
     }
 
     @Test
     void testRemovePlayer() {
-
+        game.addPlayer(player2);
+        game.removePlayer(player2);
+        assertEquals(2, game.getPlayers().size());
+        assertFalse(game.getPlayers().contains(player2));
     }
 
     @Test
     void testGetPlayerByStone() {
-
+        assertEquals(player1, game.getPlayerByStone(BLACK));
+        assertEquals(player3, game.getPlayerByStone(YELLOW));
+        assertEquals(null, game.getPlayerByStone(BLUE));
     }
 
     @Test
     void testPass() {
-
+        assertEquals("", game.pass());
+        assertEquals(WHITE, game.getTurn());
+        assertTrue(game.pass().length() > 0);
+        // strip string for values check
     }
 
     @Test
     void tableFlip() {
-
+        assertTrue(game.tableFlip().length() > 0);
     }
 
     @Test
     void testIsFinished() {
-
+        for (int i = 0; i < game.getPlayers().size(); i++) {
+            assertFalse(game.isFinished());
+            game.pass();
+        }
+        assertTrue(game.isFinished());
     }
 
     @Test
     void testMove() {
-
+        game.move(BLACK, 2, 2);
+        assertEquals(game.getBoard().getField(2, 2), BLACK);
     }
 
     @Test
     void testIsValidPass() {
-
+        assertTrue(game.isValidPass(BLACK));
+        assertFalse(game.isValidPass(WHITE));
+        assertFalse(game.isValidPass(BLUE));
     }
 
     @Test
-    void testIsValidTableflip() {
-
+    void testIsValidTableFlip() {
+        assertTrue(game.isValidTableFlip(BLACK));
+        assertFalse(game.isValidTableFlip(WHITE));
+        assertFalse(game.isValidTableFlip(BLUE));
     }
 
     @Test
     void testIsValidMove() {
-
+        assertTrue(game.isValidMove(BLACK, 1, 1));
+        assertFalse(game.isValidMove(WHITE, 0, 0));
+        game.move(BLACK, 3, 1);
+        assertFalse(game.isValidMove(WHITE, 3, 1));
+        game.move(WHITE, 3, 4);
+        game.move(BLACK, 2, 2);
+        game.move(WHITE, 2, 3);
+        game.move(BLACK, 4, 2);
+        game.move(WHITE, 4, 3);
+        game.move(BLACK, 3, 3);
+        game.move(WHITE, 3, 2);
+        assertFalse(game.isValidMove(BLACK, 3, 3));
     }
 
     @Test
     void testCheckMoveValidity() {
-
+        assertEquals(VALID.toString(), game.checkMoveValidity(BLACK, 1, 0));
     }
 }

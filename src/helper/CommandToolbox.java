@@ -6,13 +6,13 @@ import helper.enums.Stone;
 import java.util.List;
 
 import static helper.enums.Keyword.*;
-import static helper.enums.Strings.*;
+import static helper.enums.Resources.*;
 
 /**
- * This toolbox provides methods for checking protocol Keywords and Strings
+ * This toolbox provides methods for checking protocol Keywords and Resources
  * @author Mark Banierink
  */
-public class ComToolbox {
+public class CommandToolbox {
 
     private static boolean equalsKeyword(String word, Keyword keyword) {
         return word.equals(keyword.toString());
@@ -54,11 +54,12 @@ public class ComToolbox {
     /**
      * Checks if the given board size is allowed
      * @param boardSize the requested board size
-     * @param boardSizeRange array with two elements that defines the minimum and maximum (inclusive)
+     * @param boardSizeMin minimum board size
+     * @param boardSizeMax maximum board size
      * @return true if board size between the range and an odd number, false if not
      */
-    public static boolean isBoardSize(int boardSize, int[] boardSizeRange) {
-        if (boardSize >= boardSizeRange[0] && boardSize <= boardSizeRange[1]) {
+    public static boolean isValidBoardSize(int boardSize, int boardSizeMin, int boardSizeMax) {
+        if (boardSize >= boardSizeMin && boardSize <= boardSizeMax) {
             if (isOdd(boardSize)) {
                 return true;
             }

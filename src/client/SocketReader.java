@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.Socket;
 
 /**
- * Created by mark.banierink on 18-1-2017.
+ * SocketReader reads contains the BufferedReader for the socket.
  *
  * @author Mark Banierink
  */
@@ -13,30 +13,31 @@ public class SocketReader implements Runnable {
     private Socket socket = null;
     private Client client = null;
     private BufferedReader serverOutput;
+    private boolean stop;
 
     public SocketReader(Socket socket, Client client) {
         this.socket = socket;
         this.client = client;
         try {
-            this.serverOutput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+            serverOutput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private Client getClient() {
-        return this.client;
+    private void handleServerOutput(String string) {
+        client.handleServerOutput(string);
     }
 
-    private void handleServerOutput(String string) {
-        getClient().handleServerOutput(string);
+    protected void setStop() {
+        stop = true;
     }
 
     public void run() {
         String line;
         try {
-            while ((line = serverOutput.readLine()) != null) {
+            while ((line = serverOutput.readLine()) != null && !stop) {
                 handleServerOutput(line);
             }
             shutDown();
@@ -49,8 +50,8 @@ public class SocketReader implements Runnable {
     private void shutDown() {
         try {
             System.out.println("Stopping SocketReader");
-            this.serverOutput.close();
-            this.socket.close();
+            serverOutput.close();
+            socket.close();
         }
         catch (IOException e) {
             System.out.println(e.getMessage());

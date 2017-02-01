@@ -3,27 +3,39 @@ package helper;
 import java.io.*;
 
 /**
- * Created by mark.banierink on 18-1-2017.
+ * Helper class to read the console input
+ *
  * @author Mark Banierink
  */
 public class ConsoleReader implements Runnable {
 
     private ServerClientInterface serverClientInterface = null;
+    private boolean stop;
 
+    /**
+     * Constructor for the console reader
+     * @param serverClientInterface Interface containing the handling method for console input
+     */
     public ConsoleReader(ServerClientInterface serverClientInterface) {
         this.serverClientInterface = serverClientInterface;
     }
 
-    public void run() {
-        String line;
-        while ((line = readString("")) != null) {
-            getServerClient().handleConsoleInput(line);
-        }
-        System.out.println("ConsoleReader finished");
+    /**
+     * Set stop to exit the loop of the console reader
+     */
+    public void setStop() {
+        stop = true;
     }
 
-    private ServerClientInterface getServerClient() {
-        return this.serverClientInterface;
+    /**
+     * Run method reading the console and handling the input
+     */
+    public void run() {
+        String line;
+        while ((line = readString("")) != null && !stop) {
+            serverClientInterface.handleConsoleInput(line);
+        }
+        System.out.println("ConsoleReader finished");
     }
 
     protected String readString(String string) {

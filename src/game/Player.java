@@ -20,11 +20,11 @@ public class Player {
      */
     public Player(String name) {
         this.name = name;
-        this.stone = EMPTY;
+        stone = EMPTY;
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     /**
@@ -32,7 +32,7 @@ public class Player {
      * @return Stone if set, else Null
      */
     public Stone getStone() {
-        return this.stone;
+        return stone;
     }
 
     public void setStone(Stone stone) {

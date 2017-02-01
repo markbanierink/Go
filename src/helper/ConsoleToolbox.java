@@ -1,6 +1,6 @@
 package helper;
 
-import static helper.ComToolbox.*;
+import static helper.CommandToolbox.*;
 
 /**
  * Created by mark.banierink on 25-1-2017.
@@ -9,13 +9,13 @@ import static helper.ComToolbox.*;
  */
 public class ConsoleToolbox {
 
-    public static int requestIntegerInput(ConsoleReader consoleReader, String request, int defaultValue, int[] range) {
+    public static int requestIntegerInput(ConsoleReader consoleReader, String request, int defaultValue, int minValue, int maxValue) {
         int result = defaultValue;
-        String answer = consoleReader.readString(request + " (" + range[0] + "-" + range[1] + ", default " + defaultValue + "): ");
+        String answer = consoleReader.readString(request + " (" + minValue + "-" + maxValue + ", default " + defaultValue + "): ");
         if (!answer.isEmpty()) {
             if (isInteger(answer)) {
                 int number = Integer.parseInt(answer);
-                if (number >= range[0] && number <= range[1]) {
+                if (number >= minValue && number <= maxValue) {
                     result = number;
                 }
             }

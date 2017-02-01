@@ -10,10 +10,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-import static helper.ComToolbox.*;
+import static helper.CommandToolbox.*;
 import static helper.ConsoleToolbox.*;
 import static helper.enums.Keyword.*;
-import static helper.enums.Strings.*;
+import static helper.enums.Resources.*;
 
 /**
  * This class handles the server-side of the game
@@ -26,18 +26,18 @@ public class Server implements ServerClientInterface {
     private static final int DEFAULT_PORT = 2727;
     private static final int DEFAULT_PLAYERS_PER_GAME = 2;
     private static final int DEFAULT_MOVES_PER_TURN = 1;
-
-    private static final int[] MAX_CLIENTS_RANGE = {2, 20};
-    private static final int[] PORT_RANGE = {0, 65535};
-    private static final int MIN_PLAYERS_PER_GAME = 2;
-    private static final int[] MOVES_PER_TURN_RANGE = {1, 5};
+    private static final int MAX_CLIENTS_MIN = 2;
+    private static final int MAX_CLIENTS_MAX = 20;
+    private static final int PLAYERS_PER_GAME_MIN = 2;
+    private static final int MOVES_PER_TURN_MIN = 1;
+    private static final int MOVES_PER_TURN_MAX = 5;
 
     private Map<ClientHandler, Date> clientHandlers = new HashMap<>();
+    private Set<Thread> clientHandlerThreads = new HashSet<>();
     private Map<Player, ClientHandler> playersList = new HashMap<>();
     private List<Game> gamesList = new ArrayList<>();
-    private boolean serverLoop = true;
+    private boolean stop = false;
     private ConsoleReader consoleReader;
-
     private boolean matchBoardSize;
     private int maxClients = -1;
     private int playersPerGame = -1;
@@ -60,12 +60,14 @@ public class Server implements ServerClientInterface {
         setPlayersPerGame();
         setMovesPerTurn();
         Socket socket = null;
-        while (serverLoop) {
+        while (!stop) {
             if (isClientHandlerAvailable()) {
                 printOutput("Socket available");
                 socket = createSocket(serverSocket);
                 ClientHandler clientHandler = new ClientHandler(this, socket);
-                (new Thread(clientHandler, "ClientHandler " + createClientHandlerNumber())).start();
+                Thread clientHandlerThread = new Thread(clientHandler, "ClientHandler " + createClientHandlerNumber());
+                clientHandlerThread.start();
+                listClientHandlerThread(clientHandlerThread);
                 listClientHandler(clientHandler);
             }
         }
@@ -76,49 +78,28 @@ public class Server implements ServerClientInterface {
         this.consoleReader = consoleReader;
     }
 
-    private ConsoleReader getConsoleReader() {
-        return this.consoleReader;
-    }
-
     private int getPortNumber() {
-        return requestIntegerInput(getConsoleReader(), "Port number", DEFAULT_PORT, PORT_RANGE);
+        return requestIntegerInput(consoleReader, "Port number", DEFAULT_PORT, PORT_MIN, PORT_MAX);
     }
 
     private void setMatchBoardSize() {
-        this.matchBoardSize = requestBooleanInput(getConsoleReader(), "Match players on board size", "n");
+        matchBoardSize = requestBooleanInput(consoleReader, "Match players on board size", "n");
     }
 
     private void setMaxClients() {
-        this.maxClients = requestIntegerInput(getConsoleReader(), "Maximum number of clients that can connect", DEFAULT_MAX_CLIENTS, MAX_CLIENTS_RANGE);
+        maxClients = requestIntegerInput(consoleReader, "Maximum number of clients that can connect", DEFAULT_MAX_CLIENTS, MAX_CLIENTS_MIN, MAX_CLIENTS_MAX);
     }
 
     private void setPlayersPerGame() {
-        int[] playersPerGameRange = {MIN_PLAYERS_PER_GAME, maxPlayersPerGame()};
-        this.playersPerGame = requestIntegerInput(getConsoleReader(), "Number of players per game", DEFAULT_PLAYERS_PER_GAME, playersPerGameRange);
+        playersPerGame = requestIntegerInput(consoleReader, "Number of players per game", DEFAULT_PLAYERS_PER_GAME, PLAYERS_PER_GAME_MIN, maxPlayersPerGame());
     }
 
     private void setMovesPerTurn() {
-        this.movesPerTurn = requestIntegerInput(getConsoleReader(), "Number of moves per turn", DEFAULT_MOVES_PER_TURN, MOVES_PER_TURN_RANGE);
+        movesPerTurn = requestIntegerInput(consoleReader, "Number of moves per turn", DEFAULT_MOVES_PER_TURN, MOVES_PER_TURN_MIN, MOVES_PER_TURN_MAX);
     }
 
     private int maxPlayersPerGame() {
         return Stone.values().length - 1;
-    }
-
-    private boolean getMatchBoardSize() {
-        return this.matchBoardSize;
-    }
-
-    private int getPlayersPerGame() {
-        return this.playersPerGame;
-    }
-
-    private int getMovesPerTurn() {
-        return this.movesPerTurn;
-    }
-
-    private int getMaxClients() {
-        return this.maxClients;
     }
 
     private ServerSocket createServerSocket() {
@@ -147,21 +128,21 @@ public class Server implements ServerClientInterface {
     }
 
     private int createClientHandlerNumber() {
-        return getClientHandlers().size() + 1;
+        return clientHandlers.size() + 1;
     }
 
     private boolean isClientHandlerAvailable() {
-        return !(numberOfPlayers() == getMaxClients());
+        return !(numberOfPlayers() == maxClients);
     }
 
     private ClientHandler getClientHandler(Player player) {
-        return getPlayersList().get(player);
+        return playersList.get(player);
     }
 
     private Player getPlayer(ClientHandler clientHandler) {
         Player player = null;
-        for (Player listedPlayer : getPlayersList().keySet()) {
-            if (getPlayersList().get(listedPlayer).equals(clientHandler)) {
+        for (Player listedPlayer : playersList.keySet()) {
+            if (playersList.get(listedPlayer).equals(clientHandler)) {
                 player = listedPlayer;
             }
         }
@@ -176,14 +157,15 @@ public class Server implements ServerClientInterface {
         return getClientHandler(player) != null;
     }
 
-    private Map<ClientHandler, Date> getClientHandlers() {
-        return this.clientHandlers;
-    }
-
     private synchronized void listClientHandler(ClientHandler clientHandler) {
         Date date = new Date();
-        getClientHandlers().put(clientHandler, date);
+        clientHandlers.put(clientHandler, date);
         printOutput("ClientHandler listed on " + date.toString());
+    }
+
+    private synchronized void listClientHandlerThread(Thread clientHandlerThread) {
+        clientHandlerThreads.add(clientHandlerThread);
+        printOutput("ClientHandlerThread listed");
     }
 
     protected void removeClientHandler(ClientHandler clientHandler) {
@@ -194,26 +176,18 @@ public class Server implements ServerClientInterface {
     }
 
     private synchronized void removeListedClientHandler(ClientHandler clientHandler) {
-        getClientHandlers().remove(clientHandler);
+        clientHandlers.remove(clientHandler);
         printOutput("ClientHandler removed");
     }
 
-    private Map<Player, ClientHandler> getPlayersList() {
-        return this.playersList;
-    }
-
     private synchronized void listPlayer(Player player, ClientHandler clientHandler) {
-        getPlayersList().put(player, clientHandler);
+        playersList.put(player, clientHandler);
         printOutput(player.getName() + " listed");
     }
 
     private synchronized void removeListedPlayer(Player player) {
-        getPlayersList().remove(player);
+        playersList.remove(player);
         printOutput(player.getName() + " removed");
-    }
-
-    private List<Game> getGamesList() {
-        return this.gamesList;
     }
 
     private void addGamePlayer(Game game, Player player) {
@@ -242,16 +216,16 @@ public class Server implements ServerClientInterface {
 
     private synchronized void removeListedGame(Game game) {
         printOutput("Game " + getGameNumber(game) + " removed");
-        getGamesList().remove(game);
+        gamesList.remove(game);
     }
 
     private synchronized void listGame(Game game) {
-        getGamesList().add(game);
+        gamesList.add(game);
         printOutput("Game " + getGameNumber(game) + " listed");
     }
 
     private Game createGame(int boardSize) {
-        Game game = new Game(boardSize, getMovesPerTurn(), getPlayersPerGame());
+        Game game = new Game(boardSize, movesPerTurn, playersPerGame);
         listGame(game);
         return game;
     }
@@ -272,11 +246,11 @@ public class Server implements ServerClientInterface {
     }
 
     private int getGameNumber(Game game) {
-        return getGamesList().indexOf(game) + 1;
+        return gamesList.indexOf(game) + 1;
     }
 
     private boolean isFullGame(Game game) {
-        return game.getPlayers().size() == getPlayersPerGame();
+        return game.getPlayers().size() == playersPerGame;
     }
 
     private boolean hasOnePlayer(Game game) {
@@ -288,9 +262,9 @@ public class Server implements ServerClientInterface {
     }
 
     private Game availableGame(int boardSize) {
-        for (Game game : getGamesList()) {
+        for (Game game : gamesList) {
             if (!isFullGame(game)) {
-                if (!getMatchBoardSize() || game.getBoard().getBoardSize() == boardSize) {
+                if (!matchBoardSize || game.getBoard().getBoardSize() == boardSize) {
                     return game;
                 }
             }
@@ -299,7 +273,7 @@ public class Server implements ServerClientInterface {
     }
 
     private int numberOfPlayers() {
-        return getPlayersList().size();
+        return playersList.size();
     }
 
     private void broadcastClient(ClientHandler clientHandler, String message) {
@@ -321,7 +295,7 @@ public class Server implements ServerClientInterface {
     }
 
     private void broadcastPlayers(String message, Player excludedPlayer) {
-        for (Player player : getPlayersList().keySet()) {
+        for (Player player : playersList.keySet()) {
             if (!player.equals(excludedPlayer)) {
                 broadcastPlayer(player, message);
             }
@@ -329,7 +303,7 @@ public class Server implements ServerClientInterface {
     }
 
     private void broadcastClients(String string, ClientHandler excludedClientHandler) {
-        for (ClientHandler clientHandler : getClientHandlers().keySet()) {
+        for (ClientHandler clientHandler : clientHandlers.keySet()) {
             if (!clientHandler.equals(excludedClientHandler)) {
                 broadcastClient(clientHandler, string);
             }
@@ -413,7 +387,7 @@ public class Server implements ServerClientInterface {
     }
 
     private boolean playerNameExists(String name) {
-        for (Player player : getPlayersList().keySet()) {
+        for (Player player : playersList.keySet()) {
             if (player.getName().equals(name)) {
                 return true;
             }
@@ -447,7 +421,7 @@ public class Server implements ServerClientInterface {
     }
 
     private Game getGame(Player player) {
-        for (Game listedGame : getGamesList()) {
+        for (Game listedGame : gamesList) {
             for (Player listedPlayer : listedGame.getPlayers()) {
                 if (listedPlayer.equals(player)) {
                     return listedGame;
@@ -485,7 +459,7 @@ public class Server implements ServerClientInterface {
     }
 
     private void commandTableFlip(Game game, Player player) {
-        if (game.isValidTableflip(player.getStone())) {
+        if (game.isValidTableFlip(player.getStone())) {
             broadcastGame(game, createCommandTableFlipped(player.getStone()), null);
             game.tableFlip();
         }
@@ -532,11 +506,22 @@ public class Server implements ServerClientInterface {
     }
 
     private void stopServer() {
-        this.serverLoop = false;
+        stop = true;
     }
 
     private void shutDown(Socket socket, ServerSocket serverSocket, String broadcastMessage) {
         broadcastClients(broadcastMessage, null);
+        for (ClientHandler clientHandler : clientHandlers.keySet()) {
+            clientHandler.setStop();
+        }
+        for (Thread clientHandlerThread : clientHandlerThreads) {
+            try {
+                clientHandlerThread.join();
+            }
+            catch (InterruptedException e) {
+                printOutput(e.getMessage());
+            }
+        }
         try {
             socket.close();
             serverSocket.close();

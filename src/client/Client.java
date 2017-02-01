@@ -4,16 +4,16 @@ import game.*;
 import helper.*;
 
 import helper.enums.Stone;
-import helper.enums.Strings;
+import helper.enums.Resources;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import static helper.ComToolbox.*;
+import static helper.CommandToolbox.*;
 import static helper.ConsoleToolbox.*;
 import static helper.enums.Keyword.*;
-import static helper.enums.Strings.*;
+import static helper.enums.Resources.*;
 
 /**
  * The Client Class handles the client side of the game
@@ -26,47 +26,42 @@ public class Client implements ServerClientInterface {
     private static final int DEFAULT_MOVES_PER_TURN = 1;
     private static final int DEFAULT_BOARD_SIZE = 19;
 
-    private static final int[] PORT_RANGE = {0, 65535};
-    //private static final int[] MOVES_PER_TURN_RANGE = {1, 5};
-
     private ConsoleReader consoleReader;
+    private SocketReader socketReader;
     private Socket socket;
     private BufferedWriter serverInput;
     private Player player;
     private Game game;
-    private Thread socketReader;
+    private Thread socketReaderThread;
+    private Thread consoleReaderThread;
 
     /**
      * The constructor can be called from the subclasses. No parameters or environmental variables are required
      */
     public Client() {
-        this.consoleReader = new ConsoleReader(this);
-
+        consoleReader = new ConsoleReader(this);
         InetAddress inetAddress = getInetAddress();
         int port = getPortNumber();
         printOutput("Connecting to socket");
-        this.socket = getSocket(inetAddress, port);
+        socket = getSocket(inetAddress, port);
         printOutput("Connected to socket");
-        socketReader = new Thread(new SocketReader(this.socket, this), "SocketReader");
-        socketReader.start();
-
-        this.serverInput = createSocketWriter(this.socket);
+        socketReader = new SocketReader(socket, this);
+        socketReaderThread = new Thread(socketReader, "SocketReader");
+        socketReaderThread.start();
+        serverInput = createSocketWriter(socket);
         startNewPlayer();
         startNewGame();
-        (new Thread(consoleReader, "ConsoleReader")).start();
-    }
-
-    private ConsoleReader getConsoleReader() {
-        return this.consoleReader;
+        consoleReaderThread = new Thread(consoleReader, "ConsoleReader");
+        consoleReaderThread.start();
     }
 
     private int getPortNumber() {
-        return requestIntegerInput(getConsoleReader(), "Port number", DEFAULT_PORT, PORT_RANGE);
+        return requestIntegerInput(consoleReader, "Port number", DEFAULT_PORT, PORT_MIN, PORT_MAX);
     }
 
     private int requestBoardSize() {
-        int boardSize = requestIntegerInput(getConsoleReader(), "Preferred board size (odd)", DEFAULT_BOARD_SIZE, BOARD_SIZE_RANGE);
-        if (isBoardSize(boardSize, BOARD_SIZE_RANGE)) {
+        int boardSize = requestIntegerInput(consoleReader, "Preferred board size (odd)", DEFAULT_BOARD_SIZE, BOARD_SIZE_MIN, BOARD_SIZE_MAX);
+        if (isValidBoardSize(boardSize, BOARD_SIZE_MIN, BOARD_SIZE_MAX)) {
             return boardSize;
         }
         else {
@@ -84,16 +79,8 @@ public class Client implements ServerClientInterface {
         this.player = player;
     }
 
-    private Player getPlayer() {
-        return this.player;
-    }
-
     private void createGame(int boardSize, int movesPerTurn, int playersPerGame) {
-        this.game = new Game(boardSize, movesPerTurn, playersPerGame);
-    }
-
-    private Game getGame() {
-        return this.game;
+        game = new Game(boardSize, movesPerTurn, playersPerGame);
     }
 
     private void startNewPlayer() {
@@ -101,7 +88,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void startNewGame() {
-        this.game = null;
+        game = null;
         if (requestBooleanInput(consoleReader, "Do you want to start a new game", "y")) {
             handleServerInput(createCommandGo(requestBoardSize()));
         }
@@ -144,6 +131,7 @@ public class Client implements ServerClientInterface {
     }
 
     protected void handleServerOutput(String string) {
+        //messageFactory(client, string).execute();
         if (isWaitingCommand(string)) {
             commandWaiting();
         }
@@ -184,25 +172,25 @@ public class Client implements ServerClientInterface {
         createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN, arguments.length-4);
         for (int i = 2; i < arguments.length; i += 2) {
             Player player;
-            if (!getPlayer().getName().equals(arguments[i + 1])) {
+            if (!this.player.getName().equals(arguments[i + 1])) {
                 player = new Player(arguments[i + 1]);
             }
             else {
-                player = getPlayer();
+                player = this.player;
             }
-            getGame().addPlayer(player, Stone.valueOf(arguments[i].toUpperCase()));
+            game.addPlayer(player, Stone.valueOf(arguments[i].toUpperCase()));
         }
-        if (getPlayer().getStone().equals(getGame().getTurn())) {
+        if (player.getStone().equals(game.getTurn())) {
             printOutput(YOUR_TURN);
         }
     }
 
     private void commandValid(String[] arguments) {
-        String response = getGame().checkMoveValidity(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
+        String response = game.checkMoveValidity(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
         if (response.equals(VALID.toString())) {
-            getGame().move(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
-            printOutput("Move by " + getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + ": " + arguments[2] + ", " + arguments[3]);
-            if (getPlayer().getStone().equals(getGame().getTurn())) {
+            game.move(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
+            printOutput("Move by " + game.getPlayerByStone(Stone.valueOf(arguments[1])).getName() + ": " + arguments[2] + ", " + arguments[3]);
+            if (player.getStone().equals(game.getTurn())) {
                 printOutput(YOUR_TURN);
             }
         }
@@ -212,15 +200,15 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandInvalid(String[] arguments) {
-        Player opponent = getGame().getPlayerByStone(Stone.valueOf(arguments[1]));
+        Player opponent = game.getPlayerByStone(Stone.valueOf(arguments[1]));
         printOutput("Invalid move by " + opponent.getName() + ": " + arguments[2]);
     }
 
     private void commandPassed(String[] arguments) {
-        if (getGame().isValidPass(Stone.valueOf(arguments[1]))) {
-            getGame().pass();
-            printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
-            if (getPlayer().getStone().equals(getGame().getTurn()) && !getGame().isFinished()) {
+        if (game.isValidPass(Stone.valueOf(arguments[1]))) {
+            game.pass();
+            printOutput(game.getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
+            if (player.getStone().equals(game.getTurn()) && !game.isFinished()) {
                 printOutput(YOUR_TURN);
             }
         }
@@ -230,9 +218,9 @@ public class Client implements ServerClientInterface {
     }
 
     private void commandTableFlipped(String[] arguments) {
-        if (getGame().isValidTableflip(Stone.valueOf(arguments[1].toUpperCase()))) {
-            getGame().tableFlip();
-            printOutput(getGame().getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " tableflipped");
+        if (game.isValidTableFlip(Stone.valueOf(arguments[1].toUpperCase()))) {
+            game.tableFlip();
+            printOutput(game.getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " tableflipped");
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH);
@@ -278,7 +266,7 @@ public class Client implements ServerClientInterface {
                 result = "Draw..";
             }
         }
-        else if (Stone.values()[max].equals(getPlayer().getStone())) {
+        else if (Stone.values()[max].equals(player.getStone())) {
             result = "WINNER!!!";
         }
         else {
@@ -311,9 +299,9 @@ public class Client implements ServerClientInterface {
 
     private void handleServerInput(String string) {
         try {
-            this.serverInput.write(string);
-            this.serverInput.newLine();
-            this.serverInput.flush();
+            serverInput.write(string);
+            serverInput.newLine();
+            serverInput.flush();
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
@@ -321,34 +309,29 @@ public class Client implements ServerClientInterface {
     }
 
     private void shutDown() {
-
+        consoleReader.setStop();
+        socketReader.setStop();
         try {
-            this.serverInput.close();
-            this.socket.close();
+            socketReaderThread.join();
+            consoleReaderThread.join();
+        }
+        catch (InterruptedException e) {
+            printOutput(e.getMessage());
+        }
+        try {
+            serverInput.close();
+            socket.close();
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private void printOutput(Strings string) {
+    private void printOutput(Resources string) {
         printOutput(string.toString());
     }
 
     private void printOutput(String string) {
         System.out.println(string);
     }
-
-    //    private String getConsoleInput(String question) {
-    //        System.out.print(question);
-    //        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-    //        String consoleInput = "";
-    //        try {
-    //            consoleInput = bufferedReader.readLine();
-    //        }
-    //        catch (IOException e) {
-    //            printOutput(e.getMessage());
-    //        }
-    //        return consoleInput;
-    //    }
 }

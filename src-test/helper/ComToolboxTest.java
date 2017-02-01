@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.*;
 
-import static helper.ComToolbox.*;
+import static helper.CommandToolbox.*;
 import static helper.enums.Keyword.*;
 import static helper.enums.Stone.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,7 +25,8 @@ class ComToolboxTest {
     private static final int INT9 = 9;
     private static final Stone STONE1 = BLACK;
     private static final Stone STONE2 = WHITE;
-    private static final int[] BOARD_SIZE_RANGE = {5, 131};
+    private static final int BOARD_SIZE_MIN = 5;
+    private static final int BOARD_SIZE_MAX = 131;
 
     private Player newPlayer1;
     private Player newPlayer2;
@@ -107,12 +108,12 @@ class ComToolboxTest {
 
     @Test
     void testIsBoardSize() {
-        assertTrue(isBoardSize(9, BOARD_SIZE_RANGE));
-        assertFalse(isBoardSize(1, BOARD_SIZE_RANGE));
-        assertFalse(isBoardSize(132, BOARD_SIZE_RANGE));
-        assertFalse(isBoardSize(0, BOARD_SIZE_RANGE));
-        assertFalse(isBoardSize(-3, BOARD_SIZE_RANGE));
-        assertFalse(isBoardSize(8, BOARD_SIZE_RANGE));
+        assertTrue(isValidBoardSize(9, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
+        assertFalse(isValidBoardSize(1, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
+        assertFalse(isValidBoardSize(132, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
+        assertFalse(isValidBoardSize(0, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
+        assertFalse(isValidBoardSize(-3, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
+        assertFalse(isValidBoardSize(8, BOARD_SIZE_MIN, BOARD_SIZE_MAX));
     }
 
     @Test

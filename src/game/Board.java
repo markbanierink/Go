@@ -1,6 +1,8 @@
 package game;
 
 import helper.enums.Stone;
+import java.util.Arrays;
+import java.util.Objects;
 
 import static helper.enums.Stone.*;
 
@@ -19,13 +21,13 @@ public class Board {
      */
     public Board(int boardSize) {
         this.boardSize = boardSize;
-        this.fields = new Stone[boardSize][boardSize];
+        fields = new Stone[boardSize][boardSize];
         clearBoard();
     }
 
     private void clearBoard() {
-        for (int i = 0; i < getBoardSize(); i++) {
-            for (int j = 0; j < getBoardSize(); j++) {
+        for (int i = 0; i < boardSize; i++) {
+            for (int j = 0; j < boardSize; j++) {
                 setFieldEmpty(i, j);
             }
         }
@@ -37,14 +39,14 @@ public class Board {
 
     public Stone getField(int x, int y) {
         Stone result = null;
-        if (isField(x, y)) {
-            result = this.fields[x][y];
+        if (isValidField(x, y)) {
+            result = fields[x][y];
         }
         return result;
     }
 
-    protected boolean isField(int x, int y) {
-        return ((x >= 0 && x < getBoardSize()) && (y >= 0 && y < getBoardSize()));
+    protected boolean isValidField(int x, int y) {
+        return ((x >= 0 && x < boardSize) && (y >= 0 && y < boardSize));
     }
 
     /**
@@ -52,12 +54,12 @@ public class Board {
      * @return integer with the board size
      */
     public int getBoardSize() {
-        return this.boardSize;
+        return boardSize;
     }
 
     protected Board setField(int x, int y, Stone stone) {
-        if (isField(x, y)) {
-            this.fields[x][y] = stone;
+        if (isValidField(x, y)) {
+            fields[x][y] = stone;
         }
         return this;
     }
@@ -69,10 +71,10 @@ public class Board {
     }
 
     protected Board boardCopy() {
-        Board newBoard = new Board(getBoardSize());
-        for (int i = 0; i < getBoardSize(); i++) {
-            for (int j = 0; j < getBoardSize(); j++) {
-                newBoard.setField(i, j, this.getField(i, j));
+        Board newBoard = new Board(boardSize);
+        for (int i = 0; i < boardSize; i++) {
+            for (int j = 0; j < boardSize; j++) {
+                newBoard.setField(i, j, getField(i, j));
             }
         }
         return newBoard;
@@ -95,18 +97,27 @@ public class Board {
             return false;
         }
         Board board = (Board)object;
-        if (this.getBoardSize() != board.getBoardSize()) {
+        if (boardSize != board.getBoardSize()) {
             return false;
         }
         else {
-            for (int i = 0; i < this.getBoardSize(); i++) {
-                for (int j = 0; j < this.getBoardSize(); j++) {
-                    if (!this.getField(i, j).equals(board.getField(i, j))) {
+            for (int i = 0; i < boardSize; i++) {
+                for (int j = 0; j < boardSize; j++) {
+                    if (!getField(i, j).equals(board.getField(i, j))) {
                         return false;
                     }
                 }
             }
             return true;
         }
+    }
+
+    /**
+     * Overrides the hashCode method
+     * @return hashCode
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(boardSize, fields);
     }
 }

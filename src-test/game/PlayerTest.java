@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PlayerTest {
 
     private final static String NAME = "Name";
-    private final static Stone STONE = BLACK;
+    private final static Stone STONE = WHITE;
     private Player player1 = new Player(NAME);
     private Player player2 = new Player(NAME);
 
@@ -30,7 +30,7 @@ class PlayerTest {
     @Test
     void testGetStone() {
         assertEquals(STONE, player1.getStone());
-        assertEquals(null, player2.getStone());
+        assertEquals(EMPTY, player2.getStone());
     }
 
     @Test
