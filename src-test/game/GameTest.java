@@ -1,5 +1,11 @@
 package game;
 
+import com.nedap.go.gui.GoGUIIntegrator;
+import helper.enums.Stone;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.*;
 
 import static helper.enums.Keyword.*;
@@ -24,7 +30,7 @@ public class GameTest {
 
     @BeforeEach
     void setUp() {
-        this.game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME);
+        this.game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME, false);
         player1 = new Player("Joop");
         player2 = new Player("Piet");
         player3 = new Player("Henk");
@@ -71,7 +77,7 @@ public class GameTest {
 
     @Test
     void testGetPlayerByStone() {
-        assertEquals(player1, game.getPlayerByStone(BLACK));
+        assertTrue(player1.equals(game.getPlayerByStone(BLACK)) || player1.equals(game.getPlayerByStone(WHITE)));
         assertEquals(player3, game.getPlayerByStone(YELLOW));
         assertEquals(null, game.getPlayerByStone(BLUE));
     }
@@ -81,7 +87,6 @@ public class GameTest {
         assertEquals("", game.pass());
         assertEquals(WHITE, game.getTurn());
         assertTrue(game.pass().length() > 0);
-        // strip string for values check
     }
 
     @Test
@@ -137,5 +142,16 @@ public class GameTest {
     @Test
     void testCheckMoveValidity() {
         assertEquals(VALID.toString(), game.checkMoveValidity(BLACK, 1, 0));
+    }
+
+    @Test
+    void testCopyThisGame() {
+        Game futureGame = new Game(game.board.getBoardSize(), game.movesPerTurn, game.playersPerGame, true);
+        futureGame = game.copyThisGame(futureGame, BLACK);
+        futureGame.turn = WHITE;
+        futureGame.board.setField(3, 4, WHITE);
+        assertFalse(game.getTurn().equals(futureGame.getTurn()));
+        assertEquals(WHITE, futureGame.getBoard().getField(3, 4));
+        assertFalse(game.getBoard().getField(3, 4).equals(WHITE));
     }
 }

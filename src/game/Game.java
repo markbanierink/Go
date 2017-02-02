@@ -23,23 +23,25 @@ public class Game {
 
     private static final int EARLY_ENDING_SCORE = -1;
 
-    private List<Player> players = new ArrayList<>();
-    private Board board;
-    private Stone turn = BLACK;
-    private int turnCounter = 1;
-    private int passCounter = 0;
-    private List<Board> boardHistory = new ArrayList<>();
-    private static GoGUIIntegrator goGui;
-    private int movesPerTurn = 1;
-    private int playersPerGame = 2;
-    private Map<Stone, List<List<Integer>>> territories = new HashMap<>();
+    public List<Player> players = new ArrayList<>();                            // public for testing
+    public Board board;                                                         // public for testing
+    public Stone turn = BLACK;                                                  // public for testing
+    public int turnCounter = 1;                                                 // public for testing
+    public int passCounter = 0;                                                 // public for testing
+    public List<Board> boardHistory = new ArrayList<>();                        // public for testing
+    public static GoGUIIntegrator goGui;                                        // public for testing
+    public int movesPerTurn = 1;                                                // public for testing
+    public int playersPerGame = 2;                                              // public for testing
+    public Map<Stone, List<List<Integer>>> territories = new HashMap<>();       // public for testing
+    private boolean future;
 
     /**
      * Constructor of the game. Calls storeBoard() immediately to set a blank board in the board history
      * @param boardSize the size of the board on which the game is to be played
      */
-    public Game(int boardSize, int movesPerTurn, int playersPerGame) {
+    public Game(int boardSize, int movesPerTurn, int playersPerGame, boolean future) {
         board = new Board(boardSize);
+        this.future = future;
         this.movesPerTurn = movesPerTurn;
         this.playersPerGame = playersPerGame;
         for (int i = 1; i <= getPlayersPerGame(); i++) {
@@ -80,7 +82,12 @@ public class Game {
         return (y * board.getBoardSize() + 1) + x;
     }
 
-    private int[] indexToXY(int index) {
+    /**
+     * Translates an index number into a board coordinate
+     * @param index is an int between 1 and the number of board positions (boardSize*boardSize) (both inclusive)
+     * @return integer array containing respectively x and y
+     */
+    public int[] indexToXY(int index) {
         int x = (index - 1) % board.getBoardSize();
         int y = (int)Math.floor((index - 1) / board.getBoardSize());
         return new int[] {x, y};
@@ -155,25 +162,29 @@ public class Game {
 
     private void updateGame(Stone stone, int x, int y) {
         mergeChains(stone, XYToIndex(x, y));
-        updateOpponents(stone);
+        for (Stone listedStone : territories.keySet()) {
+            if (!listedStone.equals(stone)) {
+                updatePositions(listedStone);
+            }
+        }
+        updatePositions(stone);
     }
 
-    private void updateOpponents(Stone stone) {
-        for (Stone opponentsStone : territories.keySet()) {
-            if (!opponentsStone.equals(stone) && hasChains(stone)) {
-                Iterator<List<Integer>> iterator = getChains(opponentsStone).iterator();
-                while (iterator.hasNext()) {
-                    List<Integer> chain = iterator.next();
-                    if (!hasDegreesOfFreedom(chain)) {
-                        iterator.remove();
-                        captureChain(chain);
-                    }
+    private void updatePositions(Stone stone) {
+        if (hasChains(stone)) {
+            Iterator<List<Integer>> iterator = getChains(stone).iterator();
+            while (iterator.hasNext()) {
+                List<Integer> chain = iterator.next();
+                if (!hasDegreesOfFreedom(chain)) {
+                    captureChain(chain);
+                    iterator.remove();
                 }
             }
         }
     }
 
     private void captureChain(List<Integer> chain) {
+        System.out.println("chain captured");
         for (Integer index : chain) {
             removeStone(indexToXY(index)[0], indexToXY(index)[1]);
         }
@@ -279,6 +290,9 @@ public class Game {
 
     private void placeStone(int x, int y, Stone stone) {
         board.setField(x, y, stone);
+        if (guiIsAvailable() && !future) {
+            goGui.addStone(x, y, stone2bool(stone));
+        }
     }
 
     private void removeStone(int x, int y) {
@@ -298,27 +312,35 @@ public class Game {
         }
         increasePassCounter();
         if (isFinished()) {
-            return scoreString(false);
+            return endString(false);
         }
         nextTurn();
         return "";
     }
 
     /**
-     * Returns the END command string with the TABLEFLIP-score
-     * @return END string with the TABLEFLIP-score
+     * Returns the END command string with the premature ending score
+     * @return END string with the premature ending score
      */
     public String tableFlip() {
-        return scoreString(true);
+        return endString(true);
     }
 
-    private String scoreString(boolean tableFlipped) {
+    /**
+     * Returns the END command string with the premature ending score
+     * @return END string with the premature ending score
+     */
+    public String opponentGone() {
+        return endString(true);
+    }
+
+    private String endString(boolean premature) {
         String scoreString = END.toString();
         int i = 0;
         int stoneIndex = 0;
         for (Stone stone : Stone.values()) {
-            if (i > stoneIndex && i <= numPlayers()) {
-                if (tableFlipped) {
+            if (i > stoneIndex && i <= playersPerGame) {
+                if (premature) {
                     scoreString += SPACE.toString() + EARLY_ENDING_SCORE;
                 }
                 else {
@@ -327,6 +349,7 @@ public class Game {
             }
             i++;
         }
+        goGui = null;
         return scoreString;
     }
 
@@ -344,8 +367,11 @@ public class Game {
 
     private int getScore(Stone stone) {
         int score = 0;
+
         score += getStoneScore(stone);
+        System.out.print(stone + ": " + score);
         score += getTerritoryScore(stone);
+        System.out.println(" / " + stone + ": " + score);
         return score;
     }
 
@@ -358,15 +384,28 @@ public class Game {
     }
 
     private int getTerritoryScore(Stone stone) {
-        int boardIndexSize = getBoard().getBoardSize() * getBoard().getBoardSize();
+        System.out.println("TerritoryScore");
+        int boardIndexSize = board.getBoardSize() * board.getBoardSize();
         Set<Integer> allChainIndices = new HashSet<>();
         int score = 0;
-        for (int i = 1; i < boardIndexSize; i++) {
+        for (int i = 1; i <= boardIndexSize; i++) {
+            System.out.println("all indices");
+            if (getStone(i).equals(EMPTY)) {
+                System.out.println("EMPTY");
+            }
+            else {
+                System.out.println("NOT EMPTY");
+            }
             if (!allChainIndices.contains(i) && getStone(i).equals(EMPTY)) {
+                System.out.println(i + ": " + getStone(i));
+                //if (getStone(i).equals(EMPTY)) {
                 Set<Integer> chain = new HashSet<>();
                 chain.add(i);
                 chain = increaseChain(i, chain, stone);
+                System.out.println("chain");
+                //                temp(chain);
                 if (chain != null && chain.size() > 0) {
+                    System.out.println(chain.size());
                     score += chain.size();
                     allChainIndices.addAll(chain);
                 }
@@ -382,10 +421,17 @@ public class Game {
             }
             else if (getStone(coordinate).equals(EMPTY)) {
                 chain.add(coordinate);
-                return increaseChain(coordinate, chain, stone);
+                increaseChain(coordinate, chain, stone);
             }
         }
         return chain;
+    }
+
+    private void temp(Set<Integer> chain) {
+        System.out.println("Printing chain");
+        for (Integer element : chain) {
+            System.out.println(element);
+        }
     }
 
     /**
@@ -396,13 +442,10 @@ public class Game {
      */
     public void move(Stone stone, int x, int y) {
         placeStone(x, y, stone);
-        resetPassCounter();
-        if (guiIsAvailable()) {
-            goGui.addStone(x, y, stone2bool(stone));
-        }
         updateGame(stone, x, y);
-        nextTurn();
+        resetPassCounter();
         storeBoard(board);
+        nextTurn();
     }
 
     /**
@@ -445,9 +488,8 @@ public class Game {
             result = NOT_FREE_FIELD.toString();
         }
         else {
-            Game futureGame = new Game(board.getBoardSize(), movesPerTurn, playersPerGame);
-            futureGame = copyThisGame(futureGame);
-            futureGame.board = board.boardCopy();
+            Game newGame = new Game(board.getBoardSize(), movesPerTurn, playersPerGame, true);
+            Game futureGame = copyThisGame(newGame, stone);
             futureGame.move(stone, x, y);
             if (boardExists(futureGame.getBoard())) {                           // Check if it doesn't match a previous situation
                 result = KO.toString();
@@ -460,17 +502,41 @@ public class Game {
         setBoardHistory(board.boardCopy());
     }
 
-    private Game copyThisGame(Game game) {
-        game.players.addAll(players);
-        game.board = board;
-        game.turn = turn;
-        game.turnCounter = turnCounter;
-        game.passCounter = passCounter;
-        game.boardHistory.addAll(boardHistory);
-        game.movesPerTurn = movesPerTurn;
-        game.playersPerGame = playersPerGame;
-        game.territories.putAll(territories);
-        return game;
+    private List<Integer> copyIntegerList(List<Integer> list) {
+        List<Integer> newList = new ArrayList<>();
+        for (Integer index : list) {
+            newList.add(index);
+        }
+        return newList;
+    }
+
+    private List<List<Integer>> copyListList (List<List<Integer>> list) {
+        List<List<Integer>> newList = new ArrayList<>();
+        for (List chain : list) {
+            newList.add(copyIntegerList(chain));
+        }
+        return newList;
+    }
+
+    private Map<Stone, List<List<Integer>>> copyMap (Map<Stone, List<List<Integer>>> map) {
+        Map<Stone, List<List<Integer>>> newTerritories = new HashMap<>();
+        for (Stone stone : map.keySet()) {
+            newTerritories.put(stone, copyListList(map.get(stone)));
+        }
+        return newTerritories;
+    }
+
+    public Game copyThisGame(Game futureGame, Stone stone) {          // public for testing
+        futureGame.players.addAll(players);
+        futureGame.turn = stone;
+        futureGame.board = board.boardCopy();
+        futureGame.turnCounter = turnCounter;
+        futureGame.passCounter = passCounter;
+        futureGame.boardHistory.addAll(boardHistory);
+        futureGame.movesPerTurn = movesPerTurn;
+        futureGame.playersPerGame = playersPerGame;
+        futureGame.territories.putAll(copyMap(territories));
+        return futureGame;
     }
 
     private boolean boardExists(Board board) {

@@ -3,17 +3,20 @@ package client;
 import game.*;
 import helper.*;
 
-import helper.enums.Stone;
-import helper.enums.Resources;
+import helper.enums.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import strategy.*;
+import strategy.strategies.*;
 
 import static helper.CommandToolbox.*;
 import static helper.ConsoleToolbox.*;
 import static helper.enums.Keyword.*;
+import static helper.enums.PlayerType.*;
 import static helper.enums.Resources.*;
+import static helper.enums.Strategies.*;
 
 /**
  * The Client Class handles the client side of the game
@@ -24,8 +27,11 @@ public class Client implements ServerClientInterface {
 
     private static final int DEFAULT_PORT = 2727;
     private static final int DEFAULT_MOVES_PER_TURN = 1;
-    private static final int DEFAULT_BOARD_SIZE = 19;
+    private static final int DEFAULT_BOARD_SIZE = 5;
+    private static final int MAX_CALCULATION_TIME = 1000;
 
+    private InetAddress inetAddress;
+    private int port;
     private ConsoleReader consoleReader;
     private SocketReader socketReader;
     private Socket socket;
@@ -34,14 +40,40 @@ public class Client implements ServerClientInterface {
     private Game game;
     private Thread socketReaderThread;
     private Thread consoleReaderThread;
+    private PlayerType playerType = HUMAN;
+    private Strategies strategyType;
+    private Strategy strategy;
+
+    public static void main(String[] args) {
+        System.out.println("Starting Client");
+        new Client();
+    }
 
     /**
      * The constructor can be called from the subclasses. No parameters or environmental variables are required
      */
     public Client() {
         consoleReader = new ConsoleReader(this);
-        InetAddress inetAddress = getInetAddress();
-        int port = getPortNumber();
+        inetAddress = getInetAddress();
+        port = getPortNumber();
+        startNewConnection();
+    }
+
+    protected void connectionLost() {
+        if (!socket.isClosed()) {
+            try {
+                socket.close();
+            }
+            catch (IOException e) {
+                printOutput(e.getMessage());
+            }
+        }
+        consoleReaderThread.interrupt();
+
+        startNewConnection();
+    }
+
+    private void startNewConnection() {
         printOutput("Connecting to socket");
         socket = getSocket(inetAddress, port);
         printOutput("Connected to socket");
@@ -51,6 +83,9 @@ public class Client implements ServerClientInterface {
         serverInput = createSocketWriter(socket);
         startNewPlayer();
         startNewGame();
+    }
+
+    private void startNewConsoleReaderThread() {
         consoleReaderThread = new Thread(consoleReader, "ConsoleReader");
         consoleReaderThread.start();
     }
@@ -71,6 +106,17 @@ public class Client implements ServerClientInterface {
 
     private Player createPlayer() {
         Player player = new Player(requestStringInput(consoleReader, "What is your name", null));
+        if (requestBooleanInput(consoleReader, "Do you want a computer player", "y")) {
+            playerType = COMPUTER;
+        }
+        if (playerType == COMPUTER) {
+            if (requestBooleanInput(consoleReader, "Do you want a smart strategy", "n")) {
+                strategyType = SMART;
+            }
+            else {
+                strategyType = RANDOM;
+            }
+        }
         setPlayer(player);
         return player;
     }
@@ -79,8 +125,16 @@ public class Client implements ServerClientInterface {
         this.player = player;
     }
 
+    protected Game getGame() {
+        return game;
+    }
+
+    protected Player getPlayer() {
+        return player;
+    }
+
     private void createGame(int boardSize, int movesPerTurn, int playersPerGame) {
-        game = new Game(boardSize, movesPerTurn, playersPerGame);
+        game = new Game(boardSize, movesPerTurn, playersPerGame, false);
     }
 
     private void startNewPlayer() {
@@ -91,6 +145,7 @@ public class Client implements ServerClientInterface {
         game = null;
         if (requestBooleanInput(consoleReader, "Do you want to start a new game", "y")) {
             handleServerInput(createCommandGo(requestBoardSize()));
+            startNewConsoleReaderThread();
         }
         else {
             shutDown();
@@ -164,12 +219,38 @@ public class Client implements ServerClientInterface {
         }
     }
 
+    private void checkForMove() {
+        if (player.getStone().equals(game.getTurn()) && !game.isFinished()) {
+            if (playerType == COMPUTER) {
+                if (strategyType == SMART) {
+                    strategy = new SmartStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
+                }
+                else {
+                    strategy = new RandomStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
+                }
+                Thread strategyThread = new Thread(strategy);
+                strategyThread.start();
+//                try {
+//                    strategyThread.join();
+//                }
+//                catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                handleServerInput(strategy.getCommand());
+            }
+            else {
+                printOutput(YOUR_TURN);
+            }
+        }
+    }
+
     private void commandWaiting() {
         printOutput(WAITING_FOR_OPPONENT);
     }
 
     private void commandReady(String[] arguments) {
-        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN, arguments.length-4);
+        printOutput("Opponent found");
+        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN, arguments.length - 4);
         for (int i = 2; i < arguments.length; i += 2) {
             Player player;
             if (!this.player.getName().equals(arguments[i + 1])) {
@@ -180,19 +261,15 @@ public class Client implements ServerClientInterface {
             }
             game.addPlayer(player, Stone.valueOf(arguments[i].toUpperCase()));
         }
-        if (player.getStone().equals(game.getTurn())) {
-            printOutput(YOUR_TURN);
-        }
+        printOutput("Starting game");
+        checkForMove();
     }
 
     private void commandValid(String[] arguments) {
         String response = game.checkMoveValidity(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
         if (response.equals(VALID.toString())) {
             game.move(Stone.valueOf(arguments[1]), Integer.parseInt(arguments[2]), Integer.parseInt(arguments[3]));
-            printOutput("Move by " + game.getPlayerByStone(Stone.valueOf(arguments[1])).getName() + ": " + arguments[2] + ", " + arguments[3]);
-            if (player.getStone().equals(game.getTurn())) {
-                printOutput(YOUR_TURN);
-            }
+            checkForMove();
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH);
@@ -208,9 +285,7 @@ public class Client implements ServerClientInterface {
         if (game.isValidPass(Stone.valueOf(arguments[1]))) {
             game.pass();
             printOutput(game.getPlayerByStone(Stone.valueOf(arguments[1])).getName() + " passed");
-            if (player.getStone().equals(game.getTurn()) && !game.isFinished()) {
-                printOutput(YOUR_TURN);
-            }
+            checkForMove();
         }
         else {
             printOutput(SERVER_CLIENT_MISMATCH);
@@ -242,6 +317,11 @@ public class Client implements ServerClientInterface {
             outputMessage += " to " + arguments[j];
         }
         printOutput(outputMessage);
+        consoleReaderThread.interrupt();
+        printOutput("Press [Enter] to proceed");
+        while (consoleReaderThread.isAlive()) {
+            //
+        }
         startNewGame();
     }
 
@@ -289,27 +369,26 @@ public class Client implements ServerClientInterface {
         else if (isTableFlipCommand(string)) {
             handleServerInput(string);
         }
-        else if (isChatCommand(string)) {
-            handleServerInput(string);
-        }
         else {
-            noCommand(string);
+            handleServerInput(createCommandChat(string));
         }
     }
 
-    private void handleServerInput(String string) {
+    public void handleServerInput(String string) {
         try {
+            System.out.println("client output: " + string);
             serverInput.write(string);
             serverInput.newLine();
             serverInput.flush();
         }
         catch (IOException e) {
+            printOutput("Socket lost");
             System.out.println(e.getMessage());
         }
     }
 
     private void shutDown() {
-        consoleReader.setStop();
+
         socketReader.setStop();
         try {
             socketReaderThread.join();

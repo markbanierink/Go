@@ -2,7 +2,6 @@ package helper.enums;
 
 /**
  * Provides standardised Resources for communication
- *
  * @author Mark Banierink
  */
 public enum Resources {

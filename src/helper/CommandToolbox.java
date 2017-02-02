@@ -146,6 +146,15 @@ public class CommandToolbox {
     }
 
     /**
+     * Creates a valid CHAT command for the client to the server
+     * @param message the string message to be sent
+     * @return String that contains the commando
+     */
+    public static String createCommandChat(String message) {
+        return CHAT.toString() + SPACE + message;
+    }
+
+    /**
      * Creates a valid READY command from the provided arguments
      * @param boardSize is the board size on which is going to be played
      * @param stones contains the stones of the players
@@ -281,7 +290,7 @@ public class CommandToolbox {
      */
     public static String[] waitingArguments(String string) {
         String[] split = splitString(string);
-        if(split.length == 1 && (equalsKeyword(split[0], WAITING))) {
+        if (split.length == 1 && (equalsKeyword(split[0], WAITING))) {
             return split;
         }
         return null;
@@ -518,7 +527,7 @@ public class CommandToolbox {
         if (split.length >= 2 && equalsKeyword(split[0], CHAT)) {
             String[] newSplit = new String[2];
             newSplit[0] = CHAT.toString();
-            newSplit[1] = string.substring(CHAT.toString().length());
+            newSplit[1] = string.substring(CHAT.toString().length() + 1);
             return newSplit;
         }
         return null;

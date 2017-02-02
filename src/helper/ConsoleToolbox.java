@@ -34,9 +34,11 @@ public class ConsoleToolbox {
             String answer = consoleReader.readString(request + " (y/n" + defaultString + "): ");
             if (answer.equals("y")) {
                 result = true;
+                answered = true;
             }
             else if (answer.equals("n")) {
                 result = false;
+                answered = true;
             }
             else if (defaultValue != null) {
                 if (defaultValue.equals("y")) {
@@ -47,7 +49,6 @@ public class ConsoleToolbox {
                 }
                 answered = true;
             }
-
         }
         return result;
     }

@@ -170,12 +170,21 @@ public class Server implements ServerClientInterface {
 
     protected void removeClientHandler(ClientHandler clientHandler) {
         if (hasPlayer(clientHandler)) {
+            if (hasGame(getPlayer(clientHandler))) {
+                removeGamePlayer(getGame(getPlayer(clientHandler)), getPlayer(clientHandler));
+            }
             removePlayer(getPlayer(clientHandler));
         }
         removeListedClientHandler(clientHandler);
     }
 
     private synchronized void removeListedClientHandler(ClientHandler clientHandler) {
+        try {
+            clientHandler.getSocket().close();
+        }
+        catch (IOException e) {
+            printOutput(e.getMessage());
+        }
         clientHandlers.remove(clientHandler);
         printOutput("ClientHandler removed");
     }
@@ -205,13 +214,10 @@ public class Server implements ServerClientInterface {
     }
 
     private void removeGamePlayer(Game game, Player player) {
-        if (hasOnePlayer(game)) {
-            removeGame(getGame(player));
-        }
-        else {
-            game.removePlayer(player);
-            printOutput("Player removed from Game " + getGameNumber(game));
-        }
+        game.removePlayer(player);
+        broadcastGame(game, game.opponentGone(), null);
+        removeGame(game);
+        printOutput("Player removed from Game " + getGameNumber(game));
     }
 
     private synchronized void removeListedGame(Game game) {
@@ -225,7 +231,7 @@ public class Server implements ServerClientInterface {
     }
 
     private Game createGame(int boardSize) {
-        Game game = new Game(boardSize, movesPerTurn, playersPerGame);
+        Game game = new Game(boardSize, movesPerTurn, playersPerGame, false);
         listGame(game);
         return game;
     }
@@ -233,9 +239,6 @@ public class Server implements ServerClientInterface {
     private void removeGame(Game game) {
         broadcastGame(game, "This game is removed", null);
         removeListedGame(game);
-        //        for (Player player : game.getPlayers()) {
-        //            removeGamePlayer(game, player);
-        //        }
     }
 
     private void checkGameToStart(Game game) {
@@ -251,10 +254,6 @@ public class Server implements ServerClientInterface {
 
     private boolean isFullGame(Game game) {
         return game.getPlayers().size() == playersPerGame;
-    }
-
-    private boolean hasOnePlayer(Game game) {
-        return game.getPlayers().size() == 1;
     }
 
     private boolean isGameAvailable(int boardSize) {
@@ -370,7 +369,6 @@ public class Server implements ServerClientInterface {
                     commandChat(clientHandler, chatArguments(string));
                 }
                 else {
-                    System.out.println("No command 1");
                     noCommand(clientHandler, string);
                 }
             }
@@ -435,7 +433,8 @@ public class Server implements ServerClientInterface {
         int x = Integer.parseInt(arguments[1]);
         int y = Integer.parseInt(arguments[2]);
         String response = game.checkMoveValidity(player.getStone(), x, y);
-        if (game.isValidMove(player.getStone(), x, y)) {
+        //if (game.isValidMove(player.getStone(), x, y)) {
+        if (response.equals(VALID.toString())) {
             game.move(player.getStone(), x, y);
             broadcastGame(game, createCommandValid(player.getStone(), x, y), null);
         }

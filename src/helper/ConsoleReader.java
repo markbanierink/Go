@@ -2,6 +2,8 @@ package helper;
 
 import java.io.*;
 
+import static java.lang.Thread.interrupted;
+
 /**
  * Helper class to read the console input
  *
@@ -10,7 +12,6 @@ import java.io.*;
 public class ConsoleReader implements Runnable {
 
     private ServerClientInterface serverClientInterface = null;
-    private boolean stop;
 
     /**
      * Constructor for the console reader
@@ -21,21 +22,13 @@ public class ConsoleReader implements Runnable {
     }
 
     /**
-     * Set stop to exit the loop of the console reader
-     */
-    public void setStop() {
-        stop = true;
-    }
-
-    /**
      * Run method reading the console and handling the input
      */
     public void run() {
         String line;
-        while ((line = readString("")) != null && !stop) {
+        while ((line = readString("")) != null && !interrupted()) {
             serverClientInterface.handleConsoleInput(line);
         }
-        System.out.println("ConsoleReader finished");
     }
 
     protected String readString(String string) {

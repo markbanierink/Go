@@ -4,7 +4,6 @@ import java.util.Random;
 
 /**
  * Provides the Stones used in the game
- *
  * @author Mark Banierink
  */
 public enum Stone {

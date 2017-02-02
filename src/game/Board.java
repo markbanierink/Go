@@ -65,9 +65,7 @@ public class Board {
     }
 
     public void setFieldEmpty(int x, int y) {
-        if (!isEmpty(x, y)) {
-            setField(x, y, EMPTY);
-        }
+        setField(x, y, EMPTY);
     }
 
     protected Board boardCopy() {

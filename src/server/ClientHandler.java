@@ -29,28 +29,26 @@ public class ClientHandler implements Runnable {
             this.clientOutput = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
         }
         catch (IOException e) {
-            getServer().printOutput(e.getMessage());
+            server.printOutput(e.getMessage());
         }
     }
 
-    private Server getServer() {
-        return this.server;
-    }
-
     private void handleClientInput(String string) {
-        getServer().handleClientInput(this, string);
+        System.out.println(string);
+        server.handleClientInput(this, string);
     }
 
     protected void handleClientOutput(String string) {
+        System.out.println(string);
         writeString(string);
     }
 
-    protected void setStop() {
-        this.stop = true;
+    public Socket getSocket() {
+        return socket;
     }
 
-    private boolean stop() {
-        return this.stop;
+    protected void setStop() {
+        stop = true;
     }
 
     /**
@@ -60,14 +58,14 @@ public class ClientHandler implements Runnable {
     public void run() {
         String line;
         try {
-            while ((line = clientInput.readLine()) != null && !stop()) {
+            while ((line = clientInput.readLine()) != null && !stop) {
                 handleClientInput(line);
             }
             shutDown();
         }
         catch (IOException e) {
-            getServer().printOutput(e.getMessage() + ": Connection with Client was lost");
-            getServer().removeClientHandler(this);
+            server.printOutput(e.getMessage() + ": Connection with Client was lost");
+            server.removeClientHandler(this);
         }
     }
 
@@ -78,19 +76,19 @@ public class ClientHandler implements Runnable {
             this.clientOutput.flush();
         }
         catch (IOException e) {
-            getServer().printOutput(e.getMessage());
+            server.printOutput(e.getMessage());
         }
     }
 
     protected void shutDown() {
         try {
-            getServer().printOutput("ClientWriter closed");
+            server.printOutput("ClientWriter closed");
             this.clientInput.close();
             this.clientOutput.close();
             this.socket.close();
         }
         catch (IOException e) {
-            getServer().printOutput(e.getMessage());
+            server.printOutput(e.getMessage());
         }
     }
 }

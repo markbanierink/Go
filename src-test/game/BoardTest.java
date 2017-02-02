@@ -20,7 +20,7 @@ public class BoardTest {
     private Board board2 = new Board(BOARD_SIZE);
     private Board board3 = new Board(BOARD_SIZE);
     private Board board4 = new Board(BOARD_SIZE + 1);
-    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME);
+    private Game game = new Game(BOARD_SIZE, MOVES_PER_TURN, PLAYERS_PER_GAME, false);
 
     @BeforeEach
     void setUp() {

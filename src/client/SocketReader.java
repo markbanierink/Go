@@ -52,6 +52,7 @@ public class SocketReader implements Runnable {
             System.out.println("Stopping SocketReader");
             serverOutput.close();
             socket.close();
+            client.connectionLost();
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
