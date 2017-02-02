@@ -1,12 +1,12 @@
-package strategy.strategies;
+package client.strategy.strategies;
 
 import client.Client;
 import game.Game;
 import helper.enums.Stone;
-import strategy.Strategy;
+import client.strategy.Strategy;
 
 /**
- * This class represents the strategy that is used to play the game
+ * This class represents the client.strategy that is used to play the game
  *
  * @author Mark Banierink
  */

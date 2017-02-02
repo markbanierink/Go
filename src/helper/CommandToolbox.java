@@ -4,7 +4,6 @@ import game.Game;
 import game.Player;
 import helper.enums.Keyword;
 import helper.enums.Stone;
-import java.util.List;
 
 import static helper.enums.Keyword.*;
 import static helper.enums.Resources.*;
@@ -479,22 +478,22 @@ public class CommandToolbox {
     }
 
     /**
-     * Checks if the string contains a valid HELP command
+     * Checks if the string contains a valid HINT command
      * @param string to be checked
      * @return true if valid
      */
-    public static boolean isHelpCommand(String string) {
-        return helpArguments(string) != null;
+    public static boolean isHintCommand(String string) {
+        return hintArguments(string) != null;
     }
 
     /**
      * Splits and checks the string for validity and arguments
      * @param string to be checked
-     * @return true if it is HELP
+     * @return true if it is HINT
      */
-    public static String[] helpArguments(String string) {
+    public static String[] hintArguments(String string) {
         String[] split = splitString(string);
-        if (split.length == 1 && equalsKeyword(split[0], HELP)) {
+        if (split.length == 1 && equalsKeyword(split[0], HINT)) {
             return split;
         }
         return null;

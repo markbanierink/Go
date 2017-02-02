@@ -1,13 +1,11 @@
-package strategy.strategies;
+package client.strategy;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by mark.banierink on 2-2-2017.
  */
-class RandomStrategyTest {
+class StrategyTest {
     @Test
     void createMove() {
 

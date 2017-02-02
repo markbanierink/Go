@@ -1,4 +1,4 @@
-package strategy;
+package client.strategy;
 
 import client.Client;
 import game.Game;
@@ -7,7 +7,7 @@ import helper.enums.Stone;
 import static helper.CommandToolbox.*;
 
 /**
- * Abstract class describing the main functions of a strategy. The real strategy is implemented in a subclass
+ * Abstract class describing the main functions of a client.strategy. The real client.strategy is implemented in a subclass
  *
  * @author Mark Banierink
  */

@@ -8,8 +8,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import strategy.*;
-import strategy.strategies.*;
+import client.strategy.*;
+import client.strategy.strategies.*;
 
 import static helper.CommandToolbox.*;
 import static helper.ConsoleToolbox.*;
@@ -26,10 +26,10 @@ import static helper.enums.Strategies.*;
  */
 public class Client implements ServerClientInterface {
 
-    private static final int DEFAULT_PORT = 2727;
-    private static final int DEFAULT_MOVES_PER_TURN = 1;
     private static final int DEFAULT_BOARD_SIZE = 5;
-    private static final int MAX_CALCULATION_TIME = 1000;
+    private static final int DEFAULT_CALCULATION_TIME = 1000;
+    private static final int MIN_CALCULATION_TIME = 100;
+    private static final int MAX_CALCULATION_TIME = 10000;
 
     private InetAddress inetAddress;
     private int port;
@@ -44,6 +44,7 @@ public class Client implements ServerClientInterface {
     private PlayerType playerType = HUMAN;
     private Strategies strategyType;
     private Strategy strategy;
+    private int calculationTime = 1000;
 
     public static void main(String[] args) {
         System.out.println("Starting Client");
@@ -110,13 +111,11 @@ public class Client implements ServerClientInterface {
         if (requestBooleanInput(consoleReader, "Do you want a computer player", "y")) {
             playerType = COMPUTER;
         }
-        if (playerType == COMPUTER) {
-            if (requestBooleanInput(consoleReader, "Do you want a smart strategy", "n")) {
-                strategyType = SMART;
-            }
-            else {
-                strategyType = RANDOM;
-            }
+        if (requestBooleanInput(consoleReader, "Do you want a smart strategy", "n")) {
+            strategyType = SMART;
+        }
+        else {
+            strategyType = RANDOM;
         }
         setPlayer(player);
         return player;
@@ -140,6 +139,7 @@ public class Client implements ServerClientInterface {
 
     private void startNewPlayer() {
         handleServerInput(createCommandPlayer(createPlayer()));
+        calculationTime = requestIntegerInput(consoleReader, "The maximum calculation time in milliseconds", DEFAULT_CALCULATION_TIME, MIN_CALCULATION_TIME, MAX_CALCULATION_TIME);
     }
 
     private void startNewGame() {
@@ -223,10 +223,10 @@ public class Client implements ServerClientInterface {
         if (player.getStone().equals(game.getTurn()) && !game.isFinished()) {
             if (playerType == COMPUTER) {
                 if (strategyType == SMART) {
-                    strategy = new SmartStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
+                    strategy = new SmartStrategy(game, getPlayer().getStone(), calculationTime, this);
                 }
                 else {
-                    strategy = new RandomStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
+                    strategy = new RandomStrategy(game, getPlayer().getStone(), calculationTime, this);
                 }
                 Thread strategyThread = new Thread(strategy);
                 strategyThread.start();
@@ -245,20 +245,19 @@ public class Client implements ServerClientInterface {
         printOutput("Opponent found");
         int numPlayers = arguments.length - 2;
         createGame(Integer.parseInt(arguments[3]), DEFAULT_MOVES_PER_TURN, numPlayers);
-        player.setStone(Stone.valueOf(arguments[1].toUpperCase()));
-        game.addPlayer(player);
+        game.addPlayer(player, Stone.valueOf(arguments[1].toUpperCase()));
         Player opponent = new Player(arguments[2]);
+        Stone stone;
         if (Stone.valueOf(arguments[1].toUpperCase()).equals(EMPTY.nextStone(numPlayers))) {
-            opponent.setStone(EMPTY.nextStone(numPlayers).nextStone(numPlayers));
+            stone = EMPTY.nextStone(numPlayers).nextStone(numPlayers);
         }
         else {
-            opponent.setStone(EMPTY.nextStone(numPlayers));
+            stone = EMPTY.nextStone(numPlayers);
         }
-        game.addPlayer(opponent);
+        game.addPlayer(opponent, stone);
         for (int i = 4; i < numPlayers + 2; i++) {
             Player newPlayer = new Player(arguments[i]);
-            opponent.setStone(Stone.values()[(i-2)]);
-            game.addPlayer(newPlayer);
+            game.addPlayer(newPlayer, Stone.values()[(i - 2)]);
         }
         printOutput("Starting game");
         checkForMove();
@@ -358,19 +357,52 @@ public class Client implements ServerClientInterface {
         printOutput(createCommandWarning(string));
     }
 
+    private String createHint() {
+        if (strategyType == SMART) {
+            strategy = new SmartStrategy(game, getPlayer().getStone(), calculationTime, this);
+        }
+        else {
+            strategy = new RandomStrategy(game, getPlayer().getStone(), calculationTime, this);
+        }
+        String hintString = strategy.determineMove();
+        String[] hintSplit = splitString(hintString);
+        if (isMoveCommand(hintString)) {
+            game.showHint(Integer.parseInt(hintSplit[1]), Integer.parseInt(hintSplit[2]));
+        }
+        return hintString;
+    }
+
     public void handleConsoleInput(String string) {
         if (isMoveCommand(string)) {
+            if (game.isHint()) {
+                game.removeHint();
+            }
             handleServerInput(string);
         }
         else if (isPassCommand(string)) {
+            if (game.isHint()) {
+                game.removeHint();
+            }
             handleServerInput(string);
         }
         else if (isTableFlipCommand(string)) {
+            if (game.isHint()) {
+                game.removeHint();
+            }
             handleServerInput(string);
         }
-        else if (isHelpCommand(string)) {
-            strategy = new RandomStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
-            printOutput("Maybe: " + strategy.determineMove().substring(MOVE.toString().length() + 1));
+        else if (isHintCommand(string)) {
+            String hint = createHint();
+            printOutput("Maybe: " + hint);
+        }
+        else if (isCancelCommand(string)) {
+            handleServerInput(string);
+        }
+        else if (isGoCommand(string)) {
+            handleServerInput(string);
+        }
+        else if (isPlayerCommand(string)) {
+            handleServerInput(string);
         }
         else {
             handleServerInput(createCommandChat(string));
@@ -390,7 +422,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void shutDown() {
-
+        game.closeGui();
         socketReader.setStop();
         try {
             socketReaderThread.join();

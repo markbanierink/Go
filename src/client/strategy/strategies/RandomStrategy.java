@@ -1,10 +1,10 @@
-package strategy.strategies;
+package client.strategy.strategies;
 
 import client.Client;
 import game.Game;
 import helper.enums.Stone;
 import java.util.Random;
-import strategy.Strategy;
+import client.strategy.Strategy;
 
 /**
  * This class represents the Random Strategy, meaning the next move is randomly determined

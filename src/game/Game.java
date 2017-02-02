@@ -11,9 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static helper.ServerClientInterface.DEFAULT_MOVES_PER_TURN;
 import static helper.enums.Keyword.*;
 import static helper.enums.Stone.*;
 import static helper.enums.Resources.*;
+import static server.Server.DEFAULT_PLAYERS_PER_GAME;
 
 /**
  * The Game class provides the game itself. It manages the players, the board and the rules.
@@ -30,10 +32,11 @@ public class Game {
     public int passCounter = 0;                                                 // public for testing
     public List<Board> boardHistory = new ArrayList<>();                        // public for testing
     public static GoGUIIntegrator goGui;                                        // public for testing
-    public int movesPerTurn = 1;                                                // public for testing
-    public int playersPerGame = 2;                                              // public for testing
+    public int movesPerTurn = DEFAULT_MOVES_PER_TURN;                           // public for testing
+    public int playersPerGame = DEFAULT_PLAYERS_PER_GAME;                       // public for testing
     public Map<Stone, List<List<Integer>>> territories = new HashMap<>();       // public for testing
     private boolean future;
+    private boolean hint;
 
     /**
      * Constructor of the game. Calls storeBoard() immediately to set a blank board in the board history
@@ -47,15 +50,53 @@ public class Game {
         for (int i = 1; i <= getPlayersPerGame(); i++) {
             territories.put(Stone.values()[i], new ArrayList<>());
         }
-        startGUI();
+        startGui();
         storeBoard(board);
     }
 
-    private void startGUI() {
+    private void startGui() {
         if (!guiIsAvailable()) {
             goGui = new GoGUIIntegrator(false, true, board.getBoardSize());
             goGui.startGUI();
+            //goGui.clearBoard();
+            goGui.setBoardSize(board.getBoardSize());
         }
+    }
+
+    /**
+     * Returns the hint indicator value
+     * @return boolean if a hint is given
+     */
+    public boolean isHint() {
+        return hint;
+    }
+
+    public void closeGui() {
+        if(guiIsAvailable()) {
+            goGui.stopGUI();
+        }
+    }
+
+    /**
+     * Shows a hint in the GUI and sets the boolean indicator
+     * @param x the x-coordinate of the hint
+     * @param y the y-coordinate of the hint
+     */
+    public void showHint(int x, int y) {
+        if (guiIsAvailable()) {
+            hint = true;
+            goGui.addHintIndicator(x, y);
+        }
+    }
+
+    /**
+     * Removes the hint from the board and resets the indicator
+     */
+    public void removeHint() {
+        if (guiIsAvailable()) {
+            goGui.removeHintIdicator();
+        }
+        hint = false;
     }
 
     private boolean guiIsAvailable() {
@@ -348,7 +389,6 @@ public class Game {
             }
             i++;
         }
-        goGui = null;
         return scoreString;
     }
 

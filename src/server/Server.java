@@ -23,14 +23,9 @@ import static helper.enums.Resources.*;
 public class Server implements ServerClientInterface {
 
     private static final int DEFAULT_MAX_CLIENTS = 10;
-    private static final int DEFAULT_PORT = 2727;
-    private static final int DEFAULT_PLAYERS_PER_GAME = 2;
-    private static final int DEFAULT_MOVES_PER_TURN = 1;
     private static final int MAX_CLIENTS_MIN = 2;
     private static final int MAX_CLIENTS_MAX = 20;
-    private static final int PLAYERS_PER_GAME_MIN = 2;
-    private static final int MOVES_PER_TURN_MIN = 1;
-    private static final int MOVES_PER_TURN_MAX = 5;
+
 
     private Map<ClientHandler, Date> clientHandlers = new HashMap<>();
     private Set<Thread> clientHandlerThreads = new HashSet<>();
@@ -239,6 +234,7 @@ public class Server implements ServerClientInterface {
     private void removeGame(Game game) {
         broadcastGame(game, GAME_REMOVED.toString(), null);
         removeListedGame(game);
+        game.closeGui();
     }
 
     private void checkGameToStart(Game game) {
@@ -430,7 +426,6 @@ public class Server implements ServerClientInterface {
         int y = Integer.parseInt(arguments[2]);
         String response = game.checkMoveValidity(player.getStone(), x, y);
         if (game.isValidMove(player.getStone(), x, y)) {
-        //if (response.equals(VALID.toString())) {
             game.move(player.getStone(), x, y);
             broadcastGame(game, createCommandValid(player.getStone(), x, y), null);
         }
@@ -489,6 +484,7 @@ public class Server implements ServerClientInterface {
     }
 
     private void handleClientOutput(ClientHandler clientHandler, String string) {
+        printOutput(string);
         clientHandler.handleClientOutput(string);
     }
 
