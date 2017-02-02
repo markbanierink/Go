@@ -1,6 +1,7 @@
 package helper;
 
 import static helper.CommandToolbox.*;
+import static helper.enums.Resources.*;
 
 /**
  * Created by mark.banierink on 25-1-2017.
@@ -32,19 +33,19 @@ public class ConsoleToolbox {
         }
         while (!answered) {
             String answer = consoleReader.readString(request + " (y/n" + defaultString + "): ");
-            if (answer.equals("y")) {
+            if (answer.equals(Y.toString())) {
                 result = true;
                 answered = true;
             }
-            else if (answer.equals("n")) {
+            else if (answer.equals(N.toString())) {
                 result = false;
                 answered = true;
             }
             else if (defaultValue != null) {
-                if (defaultValue.equals("y")) {
+                if (defaultValue.equals(Y.toString())) {
                     result = true;
                 }
-                else if (defaultValue.equals("n")) {
+                else if (defaultValue.equals(N.toString())) {
                     result = false;
                 }
                 answered = true;

@@ -1,5 +1,6 @@
 package helper;
 
+import game.Game;
 import game.Player;
 import helper.enums.Stone;
 import java.util.ArrayList;
@@ -50,8 +51,8 @@ class ComToolboxTest {
     private String[] splitString1 = {GO.toString(), INT_STRING9};
     private String[] splitString2 = {"WHITE"};
     private int[] scores = {INT8, INT9};
-    private Stone[] stones = {STONE1, STONE2};
     private List<Player> players = new ArrayList<>();
+    private Game game = new Game(5, 1, 2, false);
 
     private String commandPlayer;
     private String commandGo;
@@ -73,9 +74,12 @@ class ComToolboxTest {
     void setUp() {
         this.newPlayer1 = new Player(NAME1);
         this.newPlayer2 = new Player(NAME2);
+        newPlayer1.setStone(BLACK);
+        newPlayer2.setStone(WHITE);
         players.add(newPlayer1);
         players.add(newPlayer2);
-
+        game.addPlayer(newPlayer1);
+        game.addPlayer(newPlayer2);
         commandPlayer = createCommandPlayer(newPlayer1);
         commandGo = createCommandGo(INT9);
         commandWaiting = createCommandWaiting();
@@ -84,7 +88,7 @@ class ComToolboxTest {
         commandPass = createCommandPass();
         commandTableFlip = createCommandTableFlip();
         commandChat = createCommandChat(NAME1, NAME2);
-        commandReady = createCommandReady(INT9, stones, players);
+        commandReady = createCommandReady(game, newPlayer1);
         commandValid = createCommandValid(STONE1, INT9, INT9);
         commandInvalid = createCommandInvalid(STONE1, NAME1);
         commandPassed = createCommandPassed(STONE1);

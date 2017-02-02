@@ -3,6 +3,8 @@ package client;
 import java.io.*;
 import java.net.Socket;
 
+import static helper.enums.Resources.*;
+
 /**
  * SocketReader reads contains the BufferedReader for the socket.
  *
@@ -49,7 +51,7 @@ public class SocketReader implements Runnable {
 
     private void shutDown() {
         try {
-            System.out.println("Stopping SocketReader");
+            System.out.println(STOP_SOCKETREADER);
             serverOutput.close();
             socket.close();
             client.connectionLost();

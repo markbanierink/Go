@@ -184,7 +184,6 @@ public class Game {
     }
 
     private void captureChain(List<Integer> chain) {
-        System.out.println("chain captured");
         for (Integer index : chain) {
             removeStone(indexToXY(index)[0], indexToXY(index)[1]);
         }
@@ -367,11 +366,8 @@ public class Game {
 
     private int getScore(Stone stone) {
         int score = 0;
-
         score += getStoneScore(stone);
-        System.out.print(stone + ": " + score);
         score += getTerritoryScore(stone);
-        System.out.println(" / " + stone + ": " + score);
         return score;
     }
 
@@ -384,28 +380,15 @@ public class Game {
     }
 
     private int getTerritoryScore(Stone stone) {
-        System.out.println("TerritoryScore");
         int boardIndexSize = board.getBoardSize() * board.getBoardSize();
         Set<Integer> allChainIndices = new HashSet<>();
         int score = 0;
         for (int i = 1; i <= boardIndexSize; i++) {
-            System.out.println("all indices");
-            if (getStone(i).equals(EMPTY)) {
-                System.out.println("EMPTY");
-            }
-            else {
-                System.out.println("NOT EMPTY");
-            }
             if (!allChainIndices.contains(i) && getStone(i).equals(EMPTY)) {
-                System.out.println(i + ": " + getStone(i));
-                //if (getStone(i).equals(EMPTY)) {
                 Set<Integer> chain = new HashSet<>();
                 chain.add(i);
                 chain = increaseChain(i, chain, stone);
-                System.out.println("chain");
-                //                temp(chain);
                 if (chain != null && chain.size() > 0) {
-                    System.out.println(chain.size());
                     score += chain.size();
                     allChainIndices.addAll(chain);
                 }
@@ -425,13 +408,6 @@ public class Game {
             }
         }
         return chain;
-    }
-
-    private void temp(Set<Integer> chain) {
-        System.out.println("Printing chain");
-        for (Integer element : chain) {
-            System.out.println(element);
-        }
     }
 
     /**

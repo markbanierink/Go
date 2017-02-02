@@ -1,5 +1,6 @@
 package helper;
 
+import game.Game;
 import game.Player;
 import helper.enums.Keyword;
 import helper.enums.Stone;
@@ -156,15 +157,17 @@ public class CommandToolbox {
 
     /**
      * Creates a valid READY command from the provided arguments
-     * @param boardSize is the board size on which is going to be played
-     * @param stones contains the stones of the players
-     * @param players contains the names of the players
+     * @param game this command concerns
+     * @param player that it is sent to
      * @return String that can be used as a commando for the server
      */
-    public static String createCommandReady(int boardSize, Stone[] stones, List<Player> players) {
-        String result = READY.toString() + SPACE + boardSize;
-        for (int i = 0; i < stones.length; i++) {
-            result += SPACE.toString() + stones[i].toString().toLowerCase() + SPACE + players.get(i).getName();
+    public static String createCommandReady(Game game, Player player) {
+        int boardSize = game.getBoard().getBoardSize();
+        Player nextPlayer = game.getPlayerByStone(player.getStone().nextStone(game.getPlayers().size()));
+        String result = READY.toString() + SPACE + player.getStone().toString().toLowerCase() + SPACE + nextPlayer.getName() + SPACE + boardSize;
+        for (int i = 2; i < game.getPlayers().size(); i++) {
+            nextPlayer = game.getPlayerByStone(nextPlayer.getStone().nextStone(game.getPlayers().size()));
+            result += SPACE + nextPlayer.getStone().toString().toLowerCase();
         }
         return result;
     }
@@ -333,21 +336,11 @@ public class CommandToolbox {
      * @return arguments for the READY command
      */
     public static String[] readyArguments(String string) {
-        String[] result = null;
         String[] split = splitString(string);
-        if (split.length >= 6 && !isOdd(split.length) && equalsKeyword(split[0], READY) && isInteger(split[1])) {
-            for (int i = 2; i < split.length; i += 2) {
-                if (isStone(split[i])) {
-                    split[i] = split[i].toUpperCase();
-                    result = split;
-                }
-                else {
-                    result = null;
-                    break;
-                }
-            }
+        if (split.length >= 4 && !isOdd(split.length) && equalsKeyword(split[0], READY) && isStone(split[1].toUpperCase()) && isInteger(split[3])) {
+            return split;
         }
-        return result;
+        return null;
     }
 
     /**
@@ -480,6 +473,28 @@ public class CommandToolbox {
     public static String[] tableFlipArguments(String string) {
         String[] split = splitString(string);
         if (split.length == 1 && equalsKeyword(split[0], TABLEFLIP)) {
+            return split;
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the string contains a valid HELP command
+     * @param string to be checked
+     * @return true if valid
+     */
+    public static boolean isHelpCommand(String string) {
+        return helpArguments(string) != null;
+    }
+
+    /**
+     * Splits and checks the string for validity and arguments
+     * @param string to be checked
+     * @return true if it is HELP
+     */
+    public static String[] helpArguments(String string) {
+        String[] split = splitString(string);
+        if (split.length == 1 && equalsKeyword(split[0], HELP)) {
             return split;
         }
         return null;

@@ -52,9 +52,9 @@ public class Server implements ServerClientInterface {
      */
     public Server() {
         setConsoleReader(new ConsoleReader(this));
-        printOutput("Starting Server");
+        printOutput(SERVER_START.toString());
         ServerSocket serverSocket = createServerSocket();
-        printOutput("ServerSocket made");
+        printOutput(SERVERSOCKET_MADE.toString());
         setMaxClients();
         setMatchBoardSize();
         setPlayersPerGame();
@@ -62,10 +62,10 @@ public class Server implements ServerClientInterface {
         Socket socket = null;
         while (!stop) {
             if (isClientHandlerAvailable()) {
-                printOutput("Socket available");
+                printOutput(SOCKET_AVAILABLE.toString());
                 socket = createSocket(serverSocket);
                 ClientHandler clientHandler = new ClientHandler(this, socket);
-                Thread clientHandlerThread = new Thread(clientHandler, "ClientHandler " + createClientHandlerNumber());
+                Thread clientHandlerThread = new Thread(clientHandler, CLIENTHANDLER.toString() + SPACE + createClientHandlerNumber());
                 clientHandlerThread.start();
                 listClientHandlerThread(clientHandlerThread);
                 listClientHandler(clientHandler);
@@ -79,23 +79,23 @@ public class Server implements ServerClientInterface {
     }
 
     private int getPortNumber() {
-        return requestIntegerInput(consoleReader, "Port number", DEFAULT_PORT, PORT_MIN, PORT_MAX);
+        return requestIntegerInput(consoleReader, PORT_NUMBER.toString(), DEFAULT_PORT, PORT_MIN, PORT_MAX);
     }
 
     private void setMatchBoardSize() {
-        matchBoardSize = requestBooleanInput(consoleReader, "Match players on board size", "n");
+        matchBoardSize = requestBooleanInput(consoleReader, MATCH_BOARDSIZE.toString(), N.toString());
     }
 
     private void setMaxClients() {
-        maxClients = requestIntegerInput(consoleReader, "Maximum number of clients that can connect", DEFAULT_MAX_CLIENTS, MAX_CLIENTS_MIN, MAX_CLIENTS_MAX);
+        maxClients = requestIntegerInput(consoleReader, MAXIMUM_CLIENTS.toString(), DEFAULT_MAX_CLIENTS, MAX_CLIENTS_MIN, MAX_CLIENTS_MAX);
     }
 
     private void setPlayersPerGame() {
-        playersPerGame = requestIntegerInput(consoleReader, "Number of players per game", DEFAULT_PLAYERS_PER_GAME, PLAYERS_PER_GAME_MIN, maxPlayersPerGame());
+        playersPerGame = requestIntegerInput(consoleReader, PLAYERS_PER_GAME.toString(), DEFAULT_PLAYERS_PER_GAME, PLAYERS_PER_GAME_MIN, maxPlayersPerGame());
     }
 
     private void setMovesPerTurn() {
-        movesPerTurn = requestIntegerInput(consoleReader, "Number of moves per turn", DEFAULT_MOVES_PER_TURN, MOVES_PER_TURN_MIN, MOVES_PER_TURN_MAX);
+        movesPerTurn = requestIntegerInput(consoleReader, MOVES_PER_TURN.toString(), DEFAULT_MOVES_PER_TURN, MOVES_PER_TURN_MIN, MOVES_PER_TURN_MAX);
     }
 
     private int maxPlayersPerGame() {
@@ -106,7 +106,7 @@ public class Server implements ServerClientInterface {
         int port = getPortNumber();
         while (true) {
             try {
-                printOutput("Local IP address: " + InetAddress.getLocalHost().getHostAddress());
+                printOutput(LOCAL_IP.toString() + COLON + InetAddress.getLocalHost().getHostAddress());
                 return new ServerSocket(port);
             }
             catch (IOException e) {
@@ -160,12 +160,12 @@ public class Server implements ServerClientInterface {
     private synchronized void listClientHandler(ClientHandler clientHandler) {
         Date date = new Date();
         clientHandlers.put(clientHandler, date);
-        printOutput("ClientHandler listed on " + date.toString());
+        printOutput(CLIENTHANDLER_LISTED.toString() + COLON + date.toString());
     }
 
     private synchronized void listClientHandlerThread(Thread clientHandlerThread) {
         clientHandlerThreads.add(clientHandlerThread);
-        printOutput("ClientHandlerThread listed");
+        printOutput(CLIENTHANDLERTHREAD_LISTED.toString());
     }
 
     protected void removeClientHandler(ClientHandler clientHandler) {
@@ -186,22 +186,22 @@ public class Server implements ServerClientInterface {
             printOutput(e.getMessage());
         }
         clientHandlers.remove(clientHandler);
-        printOutput("ClientHandler removed");
+        printOutput(CLIENTHANDLER_REMOVED.toString());
     }
 
     private synchronized void listPlayer(Player player, ClientHandler clientHandler) {
         playersList.put(player, clientHandler);
-        printOutput(player.getName() + " listed");
+        printOutput(LISTED.toString() + COLON + player.getName());
     }
 
     private synchronized void removeListedPlayer(Player player) {
         playersList.remove(player);
-        printOutput(player.getName() + " removed");
+        printOutput(REMOVED.toString() + COLON + player.getName());
     }
 
     private void addGamePlayer(Game game, Player player) {
         game.addPlayer(player);
-        printOutput("Player added to Game " + getGameNumber(game));
+        printOutput(PLAYER_ADD_GAME.toString() + COLON + getGameNumber(game));
         broadcastPlayer(player, WAITING.toString());
         checkGameToStart(game);
     }
@@ -217,17 +217,17 @@ public class Server implements ServerClientInterface {
         game.removePlayer(player);
         broadcastGame(game, game.opponentGone(), null);
         removeGame(game);
-        printOutput("Player removed from Game " + getGameNumber(game));
+        printOutput(PLAYER_REMOVED_GAME.toString() + COLON + getGameNumber(game));
     }
 
     private synchronized void removeListedGame(Game game) {
-        printOutput("Game " + getGameNumber(game) + " removed");
+        printOutput(GAME_REMOVED.toString() + COLON + getGameNumber(game));
         gamesList.remove(game);
     }
 
     private synchronized void listGame(Game game) {
         gamesList.add(game);
-        printOutput("Game " + getGameNumber(game) + " listed");
+        printOutput(GAME_LISTED.toString() + COLON + getGameNumber(game));
     }
 
     private Game createGame(int boardSize) {
@@ -237,14 +237,16 @@ public class Server implements ServerClientInterface {
     }
 
     private void removeGame(Game game) {
-        broadcastGame(game, "This game is removed", null);
+        broadcastGame(game, GAME_REMOVED.toString(), null);
         removeListedGame(game);
     }
 
     private void checkGameToStart(Game game) {
         if (isFullGame(game)) {
-            broadcastGame(game, readyMessage(game), null);
-            printOutput("Game " + getGameNumber(game) + " started");
+            for (Player player : game.getPlayers()) {
+                broadcastPlayer(player, readyMessage(game, player));
+            }
+            printOutput(GAME_STARTED.toString() + COLON + getGameNumber(game));
         }
     }
 
@@ -309,26 +311,20 @@ public class Server implements ServerClientInterface {
         }
     }
 
-    private String readyMessage(Game game) {
-        int i = 0;
-        Stone[] stones = new Stone[game.getPlayers().size()];
-        for (Player player : game.getPlayers()) {
-            stones[i] = player.getStone();
-            i++;
-        }
-        return createCommandReady(game.getBoard().getBoardSize(), stones, game.getPlayers());
+    private String readyMessage(Game game, Player player) {
+         return createCommandReady(game, player);
     }
 
     private Player createPlayer(ClientHandler clientHandler, String string) {
         String[] split = splitString(string);
         Player player = new Player(split[0]);
         listPlayer(player, clientHandler);
-        printOutput("New player: " + split[0]);
+        printOutput(NEW_PLAYER.toString() + SPACE + split[0]);
         return player;
     }
 
     protected void handleClientInput(ClientHandler clientHandler, String string) {
-        String name = "[New Client]";
+        String name = NEW_CLIENT.toString();
         if (hasPlayer(clientHandler)) {
             name = getPlayer(clientHandler).getName();
         }
@@ -406,7 +402,7 @@ public class Server implements ServerClientInterface {
         else {
             Game newGame = createGame(boardSize);
             addGamePlayer(newGame, player);
-            printOutput("Player added to Game " + getGameNumber(newGame));
+            printOutput(PLAYER_ADD_GAME.toString() + SPACE + getGameNumber(newGame));
         }
     }
 
@@ -433,8 +429,8 @@ public class Server implements ServerClientInterface {
         int x = Integer.parseInt(arguments[1]);
         int y = Integer.parseInt(arguments[2]);
         String response = game.checkMoveValidity(player.getStone(), x, y);
-        //if (game.isValidMove(player.getStone(), x, y)) {
-        if (response.equals(VALID.toString())) {
+        if (game.isValidMove(player.getStone(), x, y)) {
+        //if (response.equals(VALID.toString())) {
             game.move(player.getStone(), x, y);
             broadcastGame(game, createCommandValid(player.getStone(), x, y), null);
         }
@@ -483,7 +479,7 @@ public class Server implements ServerClientInterface {
     private void kickClient(ClientHandler clientHandler, String reason) {
         handleClientOutput(clientHandler, reason);
         handleClientOutput(clientHandler, CHAT.toString() + SPACE + SERVER + ":" + SPACE + KICKED);
-        String name = "Anonymous Client";
+        String name = ANONYMOUS.toString();
         if (hasPlayer(clientHandler)) {
             name = getPlayer(clientHandler).getName();
         }

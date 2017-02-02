@@ -1,7 +1,6 @@
 package game;
 
 import helper.enums.Stone;
-import java.util.Arrays;
 import java.util.Objects;
 
 import static helper.enums.Stone.*;

@@ -16,6 +16,7 @@ import static helper.ConsoleToolbox.*;
 import static helper.enums.Keyword.*;
 import static helper.enums.PlayerType.*;
 import static helper.enums.Resources.*;
+import static helper.enums.Stone.*;
 import static helper.enums.Strategies.*;
 
 /**
@@ -74,7 +75,7 @@ public class Client implements ServerClientInterface {
     }
 
     private void startNewConnection() {
-        printOutput("Connecting to socket");
+        printOutput(CONNECTING_SOCKET);
         socket = getSocket(inetAddress, port);
         printOutput("Connected to socket");
         socketReader = new SocketReader(socket, this);
@@ -186,7 +187,6 @@ public class Client implements ServerClientInterface {
     }
 
     protected void handleServerOutput(String string) {
-        //messageFactory(client, string).execute();
         if (isWaitingCommand(string)) {
             commandWaiting();
         }
@@ -230,13 +230,6 @@ public class Client implements ServerClientInterface {
                 }
                 Thread strategyThread = new Thread(strategy);
                 strategyThread.start();
-//                try {
-//                    strategyThread.join();
-//                }
-//                catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                handleServerInput(strategy.getCommand());
             }
             else {
                 printOutput(YOUR_TURN);
@@ -250,16 +243,22 @@ public class Client implements ServerClientInterface {
 
     private void commandReady(String[] arguments) {
         printOutput("Opponent found");
-        createGame(Integer.parseInt(arguments[1]), DEFAULT_MOVES_PER_TURN, arguments.length - 4);
-        for (int i = 2; i < arguments.length; i += 2) {
-            Player player;
-            if (!this.player.getName().equals(arguments[i + 1])) {
-                player = new Player(arguments[i + 1]);
-            }
-            else {
-                player = this.player;
-            }
-            game.addPlayer(player, Stone.valueOf(arguments[i].toUpperCase()));
+        int numPlayers = arguments.length - 2;
+        createGame(Integer.parseInt(arguments[3]), DEFAULT_MOVES_PER_TURN, numPlayers);
+        player.setStone(Stone.valueOf(arguments[1].toUpperCase()));
+        game.addPlayer(player);
+        Player opponent = new Player(arguments[2]);
+        if (Stone.valueOf(arguments[1].toUpperCase()).equals(EMPTY.nextStone(numPlayers))) {
+            opponent.setStone(EMPTY.nextStone(numPlayers).nextStone(numPlayers));
+        }
+        else {
+            opponent.setStone(EMPTY.nextStone(numPlayers));
+        }
+        game.addPlayer(opponent);
+        for (int i = 4; i < numPlayers + 2; i++) {
+            Player newPlayer = new Player(arguments[i]);
+            opponent.setStone(Stone.values()[(i-2)]);
+            game.addPlayer(newPlayer);
         }
         printOutput("Starting game");
         checkForMove();
@@ -320,7 +319,7 @@ public class Client implements ServerClientInterface {
         consoleReaderThread.interrupt();
         printOutput("Press [Enter] to proceed");
         while (consoleReaderThread.isAlive()) {
-            //
+            // Waiting to press [Enter] and kill the consoleReaderThread
         }
         startNewGame();
     }
@@ -369,6 +368,10 @@ public class Client implements ServerClientInterface {
         else if (isTableFlipCommand(string)) {
             handleServerInput(string);
         }
+        else if (isHelpCommand(string)) {
+            strategy = new RandomStrategy(game, getPlayer().getStone(), MAX_CALCULATION_TIME, this);
+            printOutput("Maybe: " + strategy.determineMove().substring(MOVE.toString().length() + 1));
+        }
         else {
             handleServerInput(createCommandChat(string));
         }
@@ -376,14 +379,13 @@ public class Client implements ServerClientInterface {
 
     public void handleServerInput(String string) {
         try {
-            System.out.println("client output: " + string);
             serverInput.write(string);
             serverInput.newLine();
             serverInput.flush();
         }
         catch (IOException e) {
             printOutput("Socket lost");
-            System.out.println(e.getMessage());
+            printOutput(e.getMessage());
         }
     }
 
@@ -402,7 +404,7 @@ public class Client implements ServerClientInterface {
             socket.close();
         }
         catch (IOException e) {
-            System.out.println(e.getMessage());
+            printOutput(e.getMessage());
         }
     }
 

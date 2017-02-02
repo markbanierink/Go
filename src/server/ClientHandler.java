@@ -3,9 +3,10 @@ package server;
 import java.io.*;
 import java.net.Socket;
 
+import static helper.enums.Resources.*;
+
 /**
  * The ClientHandler can run as a separate thread. It manages the incoming and outgoing buffer stream from Server to Client.
- *
  * @author Mark Banierink
  */
 public class ClientHandler implements Runnable {
@@ -34,12 +35,10 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleClientInput(String string) {
-        System.out.println(string);
         server.handleClientInput(this, string);
     }
 
     protected void handleClientOutput(String string) {
-        System.out.println(string);
         writeString(string);
     }
 
@@ -64,7 +63,7 @@ public class ClientHandler implements Runnable {
             shutDown();
         }
         catch (IOException e) {
-            server.printOutput(e.getMessage() + ": Connection with Client was lost");
+            server.printOutput(CONNECTION_LOST.toString());
             server.removeClientHandler(this);
         }
     }
@@ -82,7 +81,7 @@ public class ClientHandler implements Runnable {
 
     protected void shutDown() {
         try {
-            server.printOutput("ClientWriter closed");
+            server.printOutput(CLIENTHANDLER_CLOSED.toString());
             this.clientInput.close();
             this.clientOutput.close();
             this.socket.close();

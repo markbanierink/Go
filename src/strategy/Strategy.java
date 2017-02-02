@@ -32,7 +32,7 @@ public abstract class Strategy implements Runnable {
         client.handleServerInput(command);
     }
 
-    private String determineMove() {
+    public String determineMove() {
         int[] xy = createMove();
         if (xy[0] == -1) {
             return createCommandPass();
