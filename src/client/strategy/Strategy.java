@@ -16,15 +16,18 @@ public abstract class Strategy implements Runnable {
     protected Game game;
     protected Stone stone;
     private Client client;
+    long maxTime;
 
-    public Strategy(Game game, Stone stone, Client client) {
+    public Strategy(Game game, Stone stone, int maxCalculationTime, Client client) {
         this.game = game;
         this.stone = stone;
         this.client = client;
+        maxTime = System.currentTimeMillis() + maxCalculationTime;
     }
 
     public void run() {
         String command = determineMove();
+        pause();
         handleMove(command);
     }
 
@@ -39,6 +42,18 @@ public abstract class Strategy implements Runnable {
         }
         else {
             return createCommandMove(xy[0], xy[1]);
+        }
+
+    }
+
+    private void pause() {
+        try {
+            if (maxTime - System.currentTimeMillis() > 0) {
+                Thread.sleep(maxTime - System.currentTimeMillis());
+            }
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

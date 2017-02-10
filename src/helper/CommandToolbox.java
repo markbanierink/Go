@@ -5,6 +5,7 @@ import game.Player;
 import helper.enums.Keyword;
 import helper.enums.Stone;
 
+import static helper.ServerClientInterface.*;
 import static helper.enums.Keyword.*;
 import static helper.enums.Resources.*;
 
@@ -270,7 +271,7 @@ public class CommandToolbox {
      */
     public static String[] goArguments(String string) {
         String[] split = splitString(string);
-        if (split.length == 2 && equalsKeyword(split[0], GO) && isInteger(split[1])) {
+        if (split.length == 2 && equalsKeyword(split[0], GO) && isInteger(split[1]) && isValidBoardSize(Integer.parseInt(split[1]), BOARD_SIZE_MIN, BOARD_SIZE_MAX)) {
             return split;
         }
         return null;

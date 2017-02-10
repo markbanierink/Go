@@ -451,7 +451,8 @@ public class Server implements ServerClientInterface {
     private void commandTableFlip(Game game, Player player) {
         if (game.isValidTableFlip(player.getStone())) {
             broadcastGame(game, createCommandTableFlipped(player.getStone()), null);
-            game.tableFlip();
+            broadcastGame(game, game.tableFlip(), null);
+            removeGame(game);
         }
     }
 

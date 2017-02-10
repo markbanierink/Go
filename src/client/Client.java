@@ -108,10 +108,10 @@ public class Client implements ServerClientInterface {
 
     private Player createPlayer() {
         Player player = new Player(requestStringInput(consoleReader, "What is your name", null));
-        if (requestBooleanInput(consoleReader, "Do you want a computer player", "y")) {
+        if (requestBooleanInput(consoleReader, "Do you want a computer player", Y.toString())) {
             playerType = COMPUTER;
         }
-        if (requestBooleanInput(consoleReader, "Do you want a smart strategy", "n")) {
+        if (requestBooleanInput(consoleReader, "Do you want a smart strategy", Y.toString())) {
             strategyType = SMART;
         }
         else {
@@ -144,7 +144,7 @@ public class Client implements ServerClientInterface {
 
     private void startNewGame() {
         game = null;
-        if (requestBooleanInput(consoleReader, "Do you want to start a new game", "y")) {
+        if (requestBooleanInput(consoleReader, "Do you want to start a new game", Y.toString())) {
             handleServerInput(createCommandGo(requestBoardSize()));
             startNewConsoleReaderThread();
         }
@@ -246,6 +246,7 @@ public class Client implements ServerClientInterface {
         int numPlayers = arguments.length - 2;
         createGame(Integer.parseInt(arguments[3]), DEFAULT_MOVES_PER_TURN, numPlayers);
         game.addPlayer(player, Stone.valueOf(arguments[1].toUpperCase()));
+        printOutput("You are " + arguments[1].toUpperCase());
         Player opponent = new Player(arguments[2]);
         Stone stone;
         if (Stone.valueOf(arguments[1].toUpperCase()).equals(EMPTY.nextStone(numPlayers))) {
@@ -423,7 +424,9 @@ public class Client implements ServerClientInterface {
 
     private void shutDown() {
         game.closeGui();
-        socketReader.setStop();
+        if (socketReader != null) {
+            socketReader.setStop();
+        }
         try {
             socketReaderThread.join();
             consoleReaderThread.join();

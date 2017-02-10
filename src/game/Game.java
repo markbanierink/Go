@@ -35,7 +35,7 @@ public class Game {
     public int movesPerTurn = DEFAULT_MOVES_PER_TURN;                           // public for testing
     public int playersPerGame = DEFAULT_PLAYERS_PER_GAME;                       // public for testing
     public Map<Stone, List<List<Integer>>> territories = new HashMap<>();       // public for testing
-    private boolean future;
+    private boolean future = false;
     private boolean hint;
 
     /**
@@ -55,10 +55,12 @@ public class Game {
     }
 
     private void startGui() {
-        if (!guiIsAvailable()) {
-            goGui = new GoGUIIntegrator(false, true, board.getBoardSize());
+        if (!guiIsAvailable() && !future) {
+            goGui = new GoGUIIntegrator(true, true, board.getBoardSize());
             goGui.startGUI();
             //goGui.clearBoard();
+        }
+        else if (!future) {
             goGui.setBoardSize(board.getBoardSize());
         }
     }
@@ -100,7 +102,7 @@ public class Game {
     }
 
     private boolean guiIsAvailable() {
-        return goGui != null;
+        return (goGui != null && !future);
     }
 
     public Board getBoard() {
@@ -330,7 +332,7 @@ public class Game {
 
     private void placeStone(int x, int y, Stone stone) {
         board.setField(x, y, stone);
-        if (guiIsAvailable() && !future) {
+        if (guiIsAvailable()) {
             goGui.addStone(x, y, stone2bool(stone));
         }
     }
@@ -404,7 +406,7 @@ public class Game {
         passCounter = 0;
     }
 
-    private int getScore(Stone stone) {
+    public int getScore(Stone stone) {
         int score = 0;
         score += getStoneScore(stone);
         score += getTerritoryScore(stone);
@@ -428,9 +430,9 @@ public class Game {
                 Set<Integer> chain = new HashSet<>();
                 chain.add(i);
                 chain = increaseChain(i, chain, stone);
-                if (chain != null && chain.size() > 0) {
+                allChainIndices.addAll(chain);
+                if (!chain.contains(-1) && chain.size() > 0) {
                     score += chain.size();
-                    allChainIndices.addAll(chain);
                 }
             }
         }
@@ -439,10 +441,10 @@ public class Game {
 
     private Set<Integer> increaseChain(int index, Set<Integer> chain, Stone stone) {
         for (Integer coordinate : neighbours(index)) {
-            if ((!getStone(coordinate).equals(EMPTY) && !getStone(coordinate).equals(stone)) || chain.contains(coordinate)) {
-                return null;
+            if (!getStone(coordinate).equals(EMPTY) && !getStone(coordinate).equals(stone)) {
+                chain.add(-1);
             }
-            else if (getStone(coordinate).equals(EMPTY)) {
+            else if (getStone(coordinate).equals(EMPTY) && !chain.contains(coordinate)) {
                 chain.add(coordinate);
                 increaseChain(coordinate, chain, stone);
             }
@@ -504,8 +506,7 @@ public class Game {
             result = NOT_FREE_FIELD.toString();
         }
         else {
-            Game newGame = new Game(board.getBoardSize(), movesPerTurn, playersPerGame, true);
-            Game futureGame = copyThisGame(newGame, stone);
+            Game futureGame = copyThisGame();
             futureGame.move(stone, x, y);
             if (boardExists(futureGame.getBoard())) {                           // Check if it doesn't match a previous situation
                 result = KO.toString();
@@ -542,9 +543,10 @@ public class Game {
         return newTerritories;
     }
 
-    public Game copyThisGame(Game futureGame, Stone stone) {          // public for testing
+    public Game copyThisGame() {
+        Game futureGame = new Game(board.getBoardSize(), movesPerTurn, playersPerGame, true);
         futureGame.players.addAll(players);
-        futureGame.turn = stone;
+        futureGame.turn = turn;
         futureGame.board = board.boardCopy();
         futureGame.turnCounter = turnCounter;
         futureGame.passCounter = passCounter;

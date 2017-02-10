@@ -146,8 +146,7 @@ public class GameTest {
 
     @Test
     void testCopyThisGame() {
-        Game futureGame = new Game(game.board.getBoardSize(), game.movesPerTurn, game.playersPerGame, true);
-        futureGame = game.copyThisGame(futureGame, BLACK);
+        Game futureGame = game.copyThisGame();
         futureGame.turn = WHITE;
         futureGame.board.setField(3, 4, WHITE);
         assertFalse(game.getTurn().equals(futureGame.getTurn()));
